@@ -3,6 +3,8 @@
 package meridian
 
 import (
+	"encoding"
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -55,8 +57,14 @@ type Time[TZ Timezone] struct {
 
 // Compile-time interface assertions.
 var (
-	_ fmt.Stringer   = Time[Timezone]{}
-	_ fmt.GoStringer = Time[Timezone]{}
+	_ fmt.Stringer               = Time[Timezone]{}
+	_ fmt.GoStringer             = Time[Timezone]{}
+	_ json.Marshaler             = Time[Timezone]{}
+	_ json.Unmarshaler           = (*Time[Timezone])(nil)
+	_ encoding.TextMarshaler     = Time[Timezone]{}
+	_ encoding.TextUnmarshaler   = (*Time[Timezone])(nil)
+	_ encoding.BinaryMarshaler   = Time[Timezone]{}
+	_ encoding.BinaryUnmarshaler = (*Time[Timezone])(nil)
 )
 
 // Formatting & String Output
@@ -297,6 +305,77 @@ func (t Time[TZ]) UnixMicro() int64 {
 // cannot be represented by an int64 (a date before the year 1678 or after 2262).
 func (t Time[TZ]) UnixNano() int64 {
 	return t.utcTime.UnixNano()
+}
+
+// Serialization Interfaces
+
+// MarshalJSON implements the json.Marshaler interface.
+// The time is formatted as an RFC 3339 string in the timezone's location.
+func (t Time[TZ]) MarshalJSON() ([]byte, error) {
+	return t.nativeTimeInLocation().MarshalJSON()
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+// The time is parsed and stored as UTC internally.
+func (t *Time[TZ]) UnmarshalJSON(data []byte) error {
+	var stdTime time.Time
+	if err := stdTime.UnmarshalJSON(data); err != nil {
+		return err
+	}
+	t.utcTime = stdTime.UTC()
+	return nil
+}
+
+// MarshalText implements the encoding.TextMarshaler interface.
+// The time is formatted as an RFC 3339 string in the timezone's location.
+func (t Time[TZ]) MarshalText() ([]byte, error) {
+	return t.nativeTimeInLocation().MarshalText()
+}
+
+// UnmarshalText implements the encoding.TextUnmarshaler interface.
+// The time is parsed and stored as UTC internally.
+func (t *Time[TZ]) UnmarshalText(data []byte) error {
+	var stdTime time.Time
+	if err := stdTime.UnmarshalText(data); err != nil {
+		return err
+	}
+	t.utcTime = stdTime.UTC()
+	return nil
+}
+
+// AppendText appends the textual representation of t to b and returns the extended buffer.
+// The time is formatted as an RFC 3339 string in the timezone's location.
+func (t Time[TZ]) AppendText(b []byte) ([]byte, error) {
+	return t.nativeTimeInLocation().AppendFormat(b, time.RFC3339Nano), nil
+}
+
+// MarshalBinary implements the encoding.BinaryMarshaler interface.
+func (t Time[TZ]) MarshalBinary() ([]byte, error) {
+	return t.utcTime.MarshalBinary()
+}
+
+// UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
+func (t *Time[TZ]) UnmarshalBinary(data []byte) error {
+	return t.utcTime.UnmarshalBinary(data)
+}
+
+// AppendBinary appends the binary representation of t to b and returns the extended buffer.
+func (t Time[TZ]) AppendBinary(b []byte) ([]byte, error) {
+	enc, err := t.utcTime.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+	return append(b, enc...), nil
+}
+
+// GobEncode implements the gob.GobEncoder interface.
+func (t Time[TZ]) GobEncode() ([]byte, error) {
+	return t.utcTime.GobEncode()
+}
+
+// GobDecode implements the gob.GobDecoder interface.
+func (t *Time[TZ]) GobDecode(data []byte) error {
+	return t.utcTime.GobDecode(data)
 }
 
 // nativeTimeInLocation returns the native time in the location of the timezone.
