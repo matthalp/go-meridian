@@ -1033,10 +1033,10 @@ func TestClock(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			hour, min, sec := tt.time.Clock()
-			if hour != tt.hour || min != tt.min || sec != tt.sec {
+			hour, minute, sec := tt.time.Clock()
+			if hour != tt.hour || minute != tt.min || sec != tt.sec {
 				t.Errorf("Clock() = (%d, %d, %d), want (%d, %d, %d)",
-					hour, min, sec, tt.hour, tt.min, tt.sec)
+					hour, minute, sec, tt.hour, tt.min, tt.sec)
 			}
 		})
 	}
@@ -1339,5 +1339,229 @@ func TestComponentsRespectTimezone(t *testing.T) {
 	}
 	if utcTime.Second() != 0 || estTime.Second() != 0 || pstTime.Second() != 0 {
 		t.Error("Seconds should all be 0")
+	}
+}
+
+func TestIn(t *testing.T) {
+	// Create a time in UTC
+	utcTime := Date[UTC](2024, time.January, 15, 12, 0, 0, 0)
+
+	// Convert to different locations
+	estLoc, _ := time.LoadLocation("America/New_York")
+	pstLoc, _ := time.LoadLocation("America/Los_Angeles")
+
+	estConverted := utcTime.In(estLoc)
+	pstConverted := utcTime.In(pstLoc)
+
+	// Should represent the same moment
+	if !estConverted.Equal(utcTime.UTC()) {
+		t.Error("In(EST) should represent the same moment as UTC")
+	}
+	if !pstConverted.Equal(utcTime.UTC()) {
+		t.Error("In(PST) should represent the same moment as UTC")
+	}
+
+	// Hours should be different (winter time: EST = UTC-5, PST = UTC-8)
+	if estConverted.Hour() != 7 {
+		t.Errorf("EST hour = %d, want 7", estConverted.Hour())
+	}
+	if pstConverted.Hour() != 4 {
+		t.Errorf("PST hour = %d, want 4", pstConverted.Hour())
+	}
+}
+
+func TestLocal(t *testing.T) {
+	// Create a time in UTC
+	utcTime := Date[UTC](2024, time.January, 15, 12, 0, 0, 0)
+
+	// Convert to local time
+	localTime := utcTime.Local()
+
+	// Should represent the same moment
+	if !localTime.Equal(utcTime.UTC()) {
+		t.Error("Local() should represent the same moment as UTC")
+	}
+
+	// Should be in local location
+	if localTime.Location() != time.Local {
+		t.Errorf("Local() location = %v, want time.Local", localTime.Location())
+	}
+}
+
+func TestTime(t *testing.T) {
+	// Create times in different timezones
+	utcTime := Date[UTC](2024, time.January, 15, 12, 0, 0, 0)
+	estTime := Date[EST](2024, time.January, 15, 7, 0, 0, 0) // Same moment as UTC noon
+
+	// Get time.Time values
+	utcStd := utcTime.Time()
+	estStd := estTime.Time()
+
+	// Should be in the correct locations
+	if utcStd.Location() != time.UTC {
+		t.Errorf("UTC Time() location = %v, want UTC", utcStd.Location())
+	}
+
+	estLoc, _ := time.LoadLocation("America/New_York")
+	if estStd.Location().String() != estLoc.String() {
+		t.Errorf("EST Time() location = %v, want America/New_York", estStd.Location())
+	}
+
+	// Should show the correct hours in their respective timezones
+	if utcStd.Hour() != 12 {
+		t.Errorf("UTC Time() hour = %d, want 12", utcStd.Hour())
+	}
+	if estStd.Hour() != 7 {
+		t.Errorf("EST Time() hour = %d, want 7", estStd.Hour())
+	}
+
+	// But they should represent the same moment
+	if !utcStd.Equal(estStd) {
+		t.Error("UTC and EST Time() should represent the same moment")
+	}
+}
+
+func TestLocation(t *testing.T) {
+	utcTime := Date[UTC](2024, time.January, 15, 12, 0, 0, 0)
+	estTime := Date[EST](2024, time.January, 15, 12, 0, 0, 0)
+	pstTime := Date[PST](2024, time.January, 15, 12, 0, 0, 0)
+
+	// Check UTC location
+	if utcTime.Location() != time.UTC {
+		t.Errorf("UTC Location() = %v, want time.UTC", utcTime.Location())
+	}
+
+	// Check EST location
+	estLoc, _ := time.LoadLocation("America/New_York")
+	if estTime.Location().String() != estLoc.String() {
+		t.Errorf("EST Location() = %v, want America/New_York", estTime.Location())
+	}
+
+	// Check PST location
+	pstLoc, _ := time.LoadLocation("America/Los_Angeles")
+	if pstTime.Location().String() != pstLoc.String() {
+		t.Errorf("PST Location() = %v, want America/Los_Angeles", pstTime.Location())
+	}
+}
+
+func TestZone(t *testing.T) {
+	// Test winter time (standard time, not DST)
+	winterTime := Date[EST](2024, time.January, 15, 12, 0, 0, 0)
+	winterName, winterOffset := winterTime.Zone()
+
+	if winterName != "EST" {
+		t.Errorf("Winter zone name = %q, want %q", winterName, "EST")
+	}
+	// EST is UTC-5
+	if winterOffset != -5*3600 {
+		t.Errorf("Winter zone offset = %d, want %d", winterOffset, -5*3600)
+	}
+
+	// Test summer time (DST)
+	summerTime := Date[EST](2024, time.July, 15, 12, 0, 0, 0)
+	summerName, summerOffset := summerTime.Zone()
+
+	if summerName != "EDT" {
+		t.Errorf("Summer zone name = %q, want %q", summerName, "EDT")
+	}
+	// EDT is UTC-4
+	if summerOffset != -4*3600 {
+		t.Errorf("Summer zone offset = %d, want %d", summerOffset, -4*3600)
+	}
+
+	// UTC should always be UTC with 0 offset
+	utcTime := Date[UTC](2024, time.January, 15, 12, 0, 0, 0)
+	utcName, utcOffset := utcTime.Zone()
+
+	if utcName != "UTC" {
+		t.Errorf("UTC zone name = %q, want %q", utcName, "UTC")
+	}
+	if utcOffset != 0 {
+		t.Errorf("UTC zone offset = %d, want 0", utcOffset)
+	}
+}
+
+func TestZoneBounds(t *testing.T) {
+	// Create a time in EST during winter
+	winterTime := Date[EST](2024, time.January, 15, 12, 0, 0, 0)
+	start, end := winterTime.ZoneBounds()
+
+	// Should have bounds (DST transitions)
+	if start.IsZero() && end.IsZero() {
+		t.Error("EST should have zone bounds (DST transitions)")
+	}
+
+	// The end bound should be after the start bound
+	if end.Before(start) {
+		t.Error("Zone end bound should be after start bound")
+	}
+
+	// UTC should have no bounds (no DST)
+	utcTime := Date[UTC](2024, time.January, 15, 12, 0, 0, 0)
+	utcStart, utcEnd := utcTime.ZoneBounds()
+
+	// UTC has no transitions, so both should be zero
+	if !utcStart.IsZero() || !utcEnd.IsZero() {
+		t.Error("UTC should have no zone bounds")
+	}
+}
+
+func TestIsDST(t *testing.T) {
+	// Test winter time (not DST)
+	winterTime := Date[EST](2024, time.January, 15, 12, 0, 0, 0)
+	if winterTime.IsDST() {
+		t.Error("January in EST should not be DST")
+	}
+
+	// Test summer time (DST)
+	summerTime := Date[EST](2024, time.July, 15, 12, 0, 0, 0)
+	if !summerTime.IsDST() {
+		t.Error("July in EST should be DST")
+	}
+
+	// UTC never has DST
+	utcTime := Date[UTC](2024, time.July, 15, 12, 0, 0, 0)
+	if utcTime.IsDST() {
+		t.Error("UTC should never be DST")
+	}
+
+	// PST/PDT tests
+	pstWinter := Date[PST](2024, time.January, 15, 12, 0, 0, 0)
+	if pstWinter.IsDST() {
+		t.Error("January in PST should not be DST")
+	}
+
+	pstSummer := Date[PST](2024, time.July, 15, 12, 0, 0, 0)
+	if !pstSummer.IsDST() {
+		t.Error("July in PST should be DST")
+	}
+}
+
+func TestTimezoneConversions(t *testing.T) {
+	// Create a time and test various conversions
+	estTime := Date[EST](2024, time.January, 15, 12, 0, 0, 0)
+
+	// Convert to UTC (already exists)
+	utcStd := estTime.UTC()
+	if utcStd.Hour() != 17 { // Noon EST = 5 PM UTC
+		t.Errorf("UTC() hour = %d, want 17", utcStd.Hour())
+	}
+
+	// Convert to PST
+	pstLoc, _ := time.LoadLocation("America/Los_Angeles")
+	pstStd := estTime.In(pstLoc)
+	if pstStd.Hour() != 9 { // Noon EST = 9 AM PST
+		t.Errorf("In(PST) hour = %d, want 9", pstStd.Hour())
+	}
+
+	// Get time in EST location
+	estStd := estTime.Time()
+	if estStd.Hour() != 12 {
+		t.Errorf("Time() hour = %d, want 12", estStd.Hour())
+	}
+
+	// All should represent the same moment
+	if !utcStd.Equal(pstStd) || !utcStd.Equal(estStd) {
+		t.Error("All conversions should represent the same moment")
 	}
 }

@@ -196,6 +196,53 @@ func (t Time[TZ]) ISOWeek() (year, week int) {
 	return t.nativeTimeInLocation().ISOWeek()
 }
 
+// Timezone & Location
+
+// In returns a standard time.Time representing the same time instant as t,
+// but with the specified location. This is useful for converting to arbitrary
+// timezones without type safety.
+func (t Time[TZ]) In(loc *time.Location) time.Time {
+	return t.utcTime.In(loc)
+}
+
+// Local returns a standard time.Time representing the same time instant as t,
+// but with the system's local timezone.
+func (t Time[TZ]) Local() time.Time {
+	return t.utcTime.Local()
+}
+
+// Time returns a standard time.Time representing the time instant in the
+// timezone's location. This is useful for interoperating with code that
+// expects time.Time.
+func (t Time[TZ]) Time() time.Time {
+	return t.nativeTimeInLocation()
+}
+
+// Location returns the time zone location associated with the timezone type.
+func (t Time[TZ]) Location() *time.Location {
+	return getLocation[TZ]()
+}
+
+// Zone computes the time zone name and its offset in seconds east of UTC
+// at the time t in the timezone's location.
+func (t Time[TZ]) Zone() (name string, offset int) {
+	return t.nativeTimeInLocation().Zone()
+}
+
+// ZoneBounds returns the bounds of the time zone in effect at time t.
+// The zone begins at start and the next zone begins at end.
+// If the zone begins at the beginning of time, start will be returned as zero.
+// If the zone goes on forever, end will be returned as zero.
+func (t Time[TZ]) ZoneBounds() (start, end time.Time) {
+	return t.nativeTimeInLocation().ZoneBounds()
+}
+
+// IsDST reports whether the time in the timezone's location is in
+// Daylight Saving Time.
+func (t Time[TZ]) IsDST() bool {
+	return t.nativeTimeInLocation().IsDST()
+}
+
 // nativeTimeInLocation returns the native time in the location of the timezone.
 func (t Time[TZ]) nativeTimeInLocation() time.Time {
 	// This is a bit of a hack to get the timezone's location.
