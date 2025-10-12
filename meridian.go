@@ -272,6 +272,33 @@ func (t Time[TZ]) IsDST() bool {
 	return t.nativeTimeInLocation().IsDST()
 }
 
+// Unix Timestamp Conversion
+
+// Unix returns t as a Unix time, the number of seconds elapsed since
+// January 1, 1970 UTC.
+func (t Time[TZ]) Unix() int64 {
+	return t.utcTime.Unix()
+}
+
+// UnixMilli returns t as a Unix time, the number of milliseconds elapsed since
+// January 1, 1970 UTC.
+func (t Time[TZ]) UnixMilli() int64 {
+	return t.utcTime.UnixMilli()
+}
+
+// UnixMicro returns t as a Unix time, the number of microseconds elapsed since
+// January 1, 1970 UTC.
+func (t Time[TZ]) UnixMicro() int64 {
+	return t.utcTime.UnixMicro()
+}
+
+// UnixNano returns t as a Unix time, the number of nanoseconds elapsed since
+// January 1, 1970 UTC. The result is undefined if the Unix time in nanoseconds
+// cannot be represented by an int64 (a date before the year 1678 or after 2262).
+func (t Time[TZ]) UnixNano() int64 {
+	return t.utcTime.UnixNano()
+}
+
 // nativeTimeInLocation returns the native time in the location of the timezone.
 func (t Time[TZ]) nativeTimeInLocation() time.Time {
 	// This is a bit of a hack to get the timezone's location.

@@ -1772,3 +1772,262 @@ func containsSubstring(s, substr string) bool {
 	}
 	return false
 }
+
+func TestUnix(t *testing.T) {
+	tests := []struct {
+		name     string
+		time     Time[UTC]
+		expected int64
+	}{
+		{
+			name:     "Unix epoch",
+			time:     Date[UTC](1970, time.January, 1, 0, 0, 0, 0),
+			expected: 0,
+		},
+		{
+			name:     "known timestamp",
+			time:     Date[UTC](2024, time.June, 15, 14, 30, 45, 0),
+			expected: 1718461845,
+		},
+		{
+			name:     "before epoch",
+			time:     Date[UTC](1969, time.December, 31, 23, 59, 59, 0),
+			expected: -1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.time.Unix()
+			if result != tt.expected {
+				t.Errorf("Unix() = %d, want %d", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestUnixAcrossTimezones(t *testing.T) {
+	// Same moment in different timezones should have same Unix timestamp
+	utcTime := Date[UTC](2024, time.January, 15, 12, 0, 0, 0)
+	estTime := Date[EST](2024, time.January, 15, 7, 0, 0, 0) // Same moment
+	pstTime := Date[PST](2024, time.January, 15, 4, 0, 0, 0) // Same moment
+
+	utcUnix := utcTime.Unix()
+	estUnix := estTime.Unix()
+	pstUnix := pstTime.Unix()
+
+	if utcUnix != estUnix {
+		t.Errorf("UTC Unix = %d, EST Unix = %d, want equal", utcUnix, estUnix)
+	}
+	if utcUnix != pstUnix {
+		t.Errorf("UTC Unix = %d, PST Unix = %d, want equal", utcUnix, pstUnix)
+	}
+}
+
+func TestUnixMilli(t *testing.T) {
+	tests := []struct {
+		name     string
+		time     Time[UTC]
+		expected int64
+	}{
+		{
+			name:     "Unix epoch",
+			time:     Date[UTC](1970, time.January, 1, 0, 0, 0, 0),
+			expected: 0,
+		},
+		{
+			name:     "known timestamp with milliseconds",
+			time:     Date[UTC](2024, time.June, 15, 14, 30, 45, 123000000),
+			expected: 1718461845123,
+		},
+		{
+			name:     "fractional millisecond gets truncated",
+			time:     Date[UTC](2024, time.June, 15, 14, 30, 45, 123456789),
+			expected: 1718461845123,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.time.UnixMilli()
+			if result != tt.expected {
+				t.Errorf("UnixMilli() = %d, want %d", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestUnixMilliAcrossTimezones(t *testing.T) {
+	// Same moment in different timezones should have same millisecond timestamp
+	utcTime := Date[UTC](2024, time.January, 15, 12, 0, 0, 500000000) // 500ms
+	estTime := Date[EST](2024, time.January, 15, 7, 0, 0, 500000000)  // Same moment
+	pstTime := Date[PST](2024, time.January, 15, 4, 0, 0, 500000000)  // Same moment
+
+	utcMilli := utcTime.UnixMilli()
+	estMilli := estTime.UnixMilli()
+	pstMilli := pstTime.UnixMilli()
+
+	if utcMilli != estMilli {
+		t.Errorf("UTC UnixMilli = %d, EST UnixMilli = %d, want equal", utcMilli, estMilli)
+	}
+	if utcMilli != pstMilli {
+		t.Errorf("UTC UnixMilli = %d, PST UnixMilli = %d, want equal", utcMilli, pstMilli)
+	}
+}
+
+func TestUnixMicro(t *testing.T) {
+	tests := []struct {
+		name     string
+		time     Time[UTC]
+		expected int64
+	}{
+		{
+			name:     "Unix epoch",
+			time:     Date[UTC](1970, time.January, 1, 0, 0, 0, 0),
+			expected: 0,
+		},
+		{
+			name:     "known timestamp with microseconds",
+			time:     Date[UTC](2024, time.June, 15, 14, 30, 45, 123456000),
+			expected: 1718461845123456,
+		},
+		{
+			name:     "fractional microsecond gets truncated",
+			time:     Date[UTC](2024, time.June, 15, 14, 30, 45, 123456789),
+			expected: 1718461845123456,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.time.UnixMicro()
+			if result != tt.expected {
+				t.Errorf("UnixMicro() = %d, want %d", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestUnixMicroAcrossTimezones(t *testing.T) {
+	// Same moment in different timezones should have same microsecond timestamp
+	utcTime := Date[UTC](2024, time.January, 15, 12, 0, 0, 123456000)
+	estTime := Date[EST](2024, time.January, 15, 7, 0, 0, 123456000) // Same moment
+	pstTime := Date[PST](2024, time.January, 15, 4, 0, 0, 123456000) // Same moment
+
+	utcMicro := utcTime.UnixMicro()
+	estMicro := estTime.UnixMicro()
+	pstMicro := pstTime.UnixMicro()
+
+	if utcMicro != estMicro {
+		t.Errorf("UTC UnixMicro = %d, EST UnixMicro = %d, want equal", utcMicro, estMicro)
+	}
+	if utcMicro != pstMicro {
+		t.Errorf("UTC UnixMicro = %d, PST UnixMicro = %d, want equal", utcMicro, pstMicro)
+	}
+}
+
+func TestUnixNano(t *testing.T) {
+	tests := []struct {
+		name     string
+		time     Time[UTC]
+		expected int64
+	}{
+		{
+			name:     "Unix epoch",
+			time:     Date[UTC](1970, time.January, 1, 0, 0, 0, 0),
+			expected: 0,
+		},
+		{
+			name:     "known timestamp with nanoseconds",
+			time:     Date[UTC](2024, time.June, 15, 14, 30, 45, 123456789),
+			expected: 1718461845123456789,
+		},
+		{
+			name:     "maximum nanosecond precision",
+			time:     Date[UTC](2024, time.June, 15, 14, 30, 45, 999999999),
+			expected: 1718461845999999999,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.time.UnixNano()
+			if result != tt.expected {
+				t.Errorf("UnixNano() = %d, want %d", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestUnixNanoAcrossTimezones(t *testing.T) {
+	// Same moment in different timezones should have same nanosecond timestamp
+	utcTime := Date[UTC](2024, time.January, 15, 12, 0, 0, 123456789)
+	estTime := Date[EST](2024, time.January, 15, 7, 0, 0, 123456789) // Same moment
+	pstTime := Date[PST](2024, time.January, 15, 4, 0, 0, 123456789) // Same moment
+
+	utcNano := utcTime.UnixNano()
+	estNano := estTime.UnixNano()
+	pstNano := pstTime.UnixNano()
+
+	if utcNano != estNano {
+		t.Errorf("UTC UnixNano = %d, EST UnixNano = %d, want equal", utcNano, estNano)
+	}
+	if utcNano != pstNano {
+		t.Errorf("UTC UnixNano = %d, PST UnixNano = %d, want equal", utcNano, pstNano)
+	}
+}
+
+func TestUnixConversionsConsistency(t *testing.T) {
+	// Test that all Unix timestamp formats are consistent
+	testTime := Date[UTC](2024, time.June, 15, 14, 30, 45, 123456789)
+
+	unix := testTime.Unix()
+	unixMilli := testTime.UnixMilli()
+	unixMicro := testTime.UnixMicro()
+	unixNano := testTime.UnixNano()
+
+	// Verify conversions are consistent
+	if unixMilli/1000 != unix {
+		t.Errorf("UnixMilli/1000 = %d, Unix = %d, want equal", unixMilli/1000, unix)
+	}
+	if unixMicro/1000000 != unix {
+		t.Errorf("UnixMicro/1000000 = %d, Unix = %d, want equal", unixMicro/1000000, unix)
+	}
+	if unixNano/1000000000 != unix {
+		t.Errorf("UnixNano/1000000000 = %d, Unix = %d, want equal", unixNano/1000000000, unix)
+	}
+
+	// Verify precision cascades correctly
+	if unixMicro/1000 != unixMilli {
+		t.Errorf("UnixMicro/1000 = %d, UnixMilli = %d, want equal", unixMicro/1000, unixMilli)
+	}
+	if unixNano/1000 != unixMicro {
+		t.Errorf("UnixNano/1000 = %d, UnixMicro = %d, want equal", unixNano/1000, unixMicro)
+	}
+}
+
+func TestUnixWithZeroTime(t *testing.T) {
+	// Test Unix conversions with zero time
+	var zeroTime Time[UTC]
+
+	// All should return large negative numbers (time before 1970)
+	unix := zeroTime.Unix()
+	unixMilli := zeroTime.UnixMilli()
+	unixMicro := zeroTime.UnixMicro()
+	unixNano := zeroTime.UnixNano()
+
+	// Zero time is January 1, year 1, 00:00:00.000000000 UTC
+	// This is well before Unix epoch (1970)
+	if unix >= 0 {
+		t.Errorf("Zero time Unix() = %d, expected negative (before 1970)", unix)
+	}
+	if unixMilli >= 0 {
+		t.Errorf("Zero time UnixMilli() = %d, expected negative (before 1970)", unixMilli)
+	}
+	if unixMicro >= 0 {
+		t.Errorf("Zero time UnixMicro() = %d, expected negative (before 1970)", unixMicro)
+	}
+	if unixNano >= 0 {
+		t.Errorf("Zero time UnixNano() = %d, expected negative (before 1970)", unixNano)
+	}
+}
