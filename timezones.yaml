@@ -1,0 +1,16 @@
+# Timezone definitions for go-meridian
+# Add new timezones here and run `make generate` to create the packages
+
+timezones:
+  - name: est
+    location: America/New_York
+    description: Eastern Standard Time
+  
+  - name: pst
+    location: America/Los_Angeles
+    description: Pacific Standard Time
+  
+  - name: utc
+    location: UTC
+    description: Coordinated Universal Time
+

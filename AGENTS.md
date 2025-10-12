@@ -322,9 +322,12 @@ The GitHub Actions workflow enforces:
 1. **Tests pass** on Go 1.20+ with race detection
 2. **Linting passes** with golangci-lint
 3. **go.mod is tidy**: `go mod tidy` produces no changes
-4. **Coverage tracking**: Reports uploaded to Codecov
+4. **Generated code is in sync**: Timezone packages match `timezones.yaml`
+5. **Coverage tracking**: Reports uploaded to Codecov
 
 All PRs must pass these checks. If CI fails, the PR cannot merge.
+
+**Note on generated code**: If you modify `timezones.yaml`, you must run `make generate` and commit the generated files. The CI will fail if generated packages are out of sync with the configuration.
 
 ## IDE Setup
 
@@ -345,95 +348,81 @@ All PRs must pass these checks. If CI fails, the PR cannot merge.
 
 ## When Adding New Timezones
 
-Each timezone package must follow this exact pattern for consistency:
+Timezone packages are **automatically generated** from the `timezones.yaml` configuration file. To add a new timezone:
 
-```go
-// Package jst provides Japan Standard Time timezone support for meridian.
-package jst
+### Step 1: Add to timezones.yaml
 
-import (
-    "fmt"
-    "time"
-    
-    "github.com/matthalp/go-meridian"
-)
+Edit `timezones.yaml` in the project root and add your timezone:
 
-// location is the IANA timezone location, loaded once at package initialization.
-var location = mustLoadLocation("Asia/Tokyo")
-
-// mustLoadLocation loads a timezone location or panics if it fails.
-// This should only fail if the system's timezone database is corrupted or missing.
-func mustLoadLocation(name string) *time.Location {
-    loc, err := time.LoadLocation(name)
-    if err != nil {
-        panic(fmt.Sprintf("failed to load timezone %s: %v", name, err))
-    }
-    return loc
-}
-
-// Timezone represents the Japan Standard Time timezone.
-type Timezone struct{}
-
-// Location returns the IANA timezone location.
-func (Timezone) Location() *time.Location {
-    return location
-}
-
-// Time is a convenience alias for meridian.Time[Timezone].
-type Time = meridian.Time[Timezone]
-
-// Now returns the current time in this timezone.
-func Now() Time {
-    return meridian.Now[Timezone]()
-}
-
-// Date creates a new time in this timezone with the specified date and time components.
-func Date(year int, month time.Month, day, hour, minute, sec, nsec int) Time {
-    return meridian.Date[Timezone](year, month, day, hour, minute, sec, nsec)
-}
-
-// FromMoment converts any Moment to JST time.
-func FromMoment(m meridian.Moment) Time {
-	return meridian.FromMoment[Timezone](m)
-}
-
-// Parse parses a formatted string and returns the time value it represents in JST.
-// The layout defines the format by showing how the reference time would be displayed.
-// Note: ParseInLocation is not needed as the location is already JST.
-func Parse(layout, value string) (Time, error) {
-    t, err := time.ParseInLocation(layout, value, location)
-    if err != nil {
-        return Time{}, err
-    }
-    return meridian.FromMoment[Timezone](t), nil
-}
-
-// Unix returns the JST time corresponding to the given Unix time,
-// sec seconds and nsec nanoseconds since January 1, 1970 UTC.
-func Unix(sec, nsec int64) Time {
-    return meridian.FromMoment[Timezone](time.Unix(sec, nsec))
-}
-
-// UnixMilli returns the JST time corresponding to the given Unix time,
-// msec milliseconds since January 1, 1970 UTC.
-func UnixMilli(msec int64) Time {
-    return meridian.FromMoment[Timezone](time.UnixMilli(msec))
-}
-
-// UnixMicro returns the JST time corresponding to the given Unix time,
-// usec microseconds since January 1, 1970 UTC.
-func UnixMicro(usec int64) Time {
-    return meridian.FromMoment[Timezone](time.UnixMicro(usec))
-}
+```yaml
+timezones:
+  - name: jst
+    location: Asia/Tokyo
+    description: Japan Standard Time
 ```
 
-**Key points:**
-- Type is always named `Timezone` (package name conveys the actual timezone)
-- `Time` type alias enables clean API: `jst.Time` in function signatures
-- Location loaded once at init in a package variable for efficiency
-- `mustLoadLocation` helper panics early if timezone database is missing
-- Consistent comments and structure across all timezone packages
-- All factory methods (Now, Date, Parse, Unix, UnixMilli, UnixMicro, FromMoment) follow the same pattern
+**Configuration fields:**
+- `name`: Package name (lowercase, will be the directory name: `jst/`)
+- `location`: IANA timezone name (e.g., `Asia/Tokyo`, `America/Chicago`)
+- `description`: Human-readable timezone name for documentation
+
+### Step 2: Generate the package
+
+```bash
+make generate
+```
+
+This will create:
+- `jst/jst.go` - Package implementation with all timezone methods
+- `jst/jst_test.go` - Complete test suite
+
+### Step 3: Verify
+
+```bash
+make test       # Ensure all tests pass
+make lint       # Ensure code quality standards are met
+```
+
+**Important**: The CI pipeline will verify that generated code is in sync with `timezones.yaml`. If you forget to run `make generate` after modifying the YAML file, the CI build will fail with a helpful error message showing which files are out of sync.
+
+### Generated Code Structure
+
+Each generated timezone package includes:
+
+**Package file (`{name}/{name}.go`):**
+- `type Timezone struct{}` - Timezone type
+- `type Time = meridian.Time[Timezone]` - Convenience alias
+- `func Location() *time.Location` - Returns IANA location
+- `func Now() Time` - Current time in this timezone
+- `func Date(...) Time` - Create time from components
+- `func FromMoment(Moment) Time` - Convert from any timezone
+- `func Parse(layout, value) (Time, error)` - Parse time string
+- `func Unix(sec, nsec) Time` - From Unix timestamp
+- `func UnixMilli(msec) Time` - From Unix milliseconds
+- `func UnixMicro(usec) Time` - From Unix microseconds
+
+**Test file (`{name}/{name}_test.go`):**
+- Location verification test
+- Now() functionality test
+- Date() with timezone offset tests
+- Conversion tests (from time.Time, from other timezones, round-trip)
+- Parse tests (format handling, timezone interpretation)
+- Unix timestamp tests (all precisions)
+
+### Special Cases
+
+**UTC timezone** is handled automatically:
+- Uses `time.UTC` directly instead of `time.LoadLocation`
+- No `mustLoadLocation` helper needed
+- Simplified Parse implementation using `time.Parse`
+
+### Generator Implementation
+
+The code generator lives at `cmd/generate-timezones/main.go`:
+- Reads `timezones.yaml` using `gopkg.in/yaml.v3`
+- Uses Go templates for package and test generation
+- Formats output with `goimports` for proper import ordering
+- Handles conditional logic for UTC and import cycle prevention
 
 ## Questions to Ask Before Committing
 

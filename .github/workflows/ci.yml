@@ -91,3 +91,26 @@ jobs:
             exit 1
           fi
 
+      - name: Install goimports
+        run: go install golang.org/x/tools/cmd/goimports@v0.7.0  # Changed from v0.30.0
+
+      - name: Verify generated code is in sync
+        run: |
+          make generate
+          # Check for both modified and untracked files
+          if [ -n "$(git status --porcelain)" ]; then
+            echo ""
+            echo "ERROR: Generated timezone packages are out of sync with timezones.yaml"
+            echo "Please run 'make generate' and commit the changes."
+            echo ""
+            echo "Changed/new files:"
+            git status --porcelain
+            echo ""
+            echo "Diff of modified files:"
+            git diff
+            echo ""
+            echo "Untracked files/directories:"
+            git ls-files --others --exclude-standard
+            exit 1
+          fi
+

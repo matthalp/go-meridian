@@ -1,8 +1,9 @@
-.PHONY: help test test-coverage lint build clean run-example install-tools
+.PHONY: help test test-coverage lint build clean run-example install-tools generate
 
 # Default target
 help:
 	@echo "Available targets:"
+	@echo "  make generate       - Generate timezone packages from timezones.yaml"
 	@echo "  make test           - Run tests"
 	@echo "  make test-coverage  - Run tests with coverage report"
 	@echo "  make lint           - Run linter"
@@ -38,6 +39,10 @@ clean:
 	rm -rf bin/
 	rm -f coverage.out coverage.html
 	go clean
+
+# Generate timezone packages from timezones.yaml
+generate:
+	go run ./cmd/generate-timezones
 
 # Install development tools
 install-tools:
