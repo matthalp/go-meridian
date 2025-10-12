@@ -999,3 +999,345 @@ func TestIsZeroAcrossTimezones(t *testing.T) {
 		t.Error("Zero PST time should return IsZero() = true")
 	}
 }
+
+func TestClock(t *testing.T) {
+	tests := []struct {
+		name string
+		time Time[UTC]
+		hour int
+		min  int
+		sec  int
+	}{
+		{
+			name: "midnight",
+			time: Date[UTC](2024, time.January, 15, 0, 0, 0, 0),
+			hour: 0,
+			min:  0,
+			sec:  0,
+		},
+		{
+			name: "noon",
+			time: Date[UTC](2024, time.January, 15, 12, 30, 45, 0),
+			hour: 12,
+			min:  30,
+			sec:  45,
+		},
+		{
+			name: "end of day",
+			time: Date[UTC](2024, time.January, 15, 23, 59, 59, 0),
+			hour: 23,
+			min:  59,
+			sec:  59,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			hour, min, sec := tt.time.Clock()
+			if hour != tt.hour || min != tt.min || sec != tt.sec {
+				t.Errorf("Clock() = (%d, %d, %d), want (%d, %d, %d)",
+					hour, min, sec, tt.hour, tt.min, tt.sec)
+			}
+		})
+	}
+}
+
+func TestClockAcrossTimezones(t *testing.T) {
+	// Create noon UTC (which is 7 AM EST in winter, 5 AM PST in winter)
+	utcNoon := Date[UTC](2024, time.January, 15, 12, 0, 0, 0)
+	estMorning := Date[EST](2024, time.January, 15, 7, 0, 0, 0)
+	pstMorning := Date[PST](2024, time.January, 15, 4, 0, 0, 0)
+
+	// Verify they represent the same moment
+	if !utcNoon.Equal(estMorning) || !utcNoon.Equal(pstMorning) {
+		t.Fatal("Times should represent the same moment")
+	}
+
+	// Clock() should return different values based on timezone
+	utcHour, _, _ := utcNoon.Clock()
+	estHour, _, _ := estMorning.Clock()
+	pstHour, _, _ := pstMorning.Clock()
+
+	if utcHour != 12 {
+		t.Errorf("UTC hour = %d, want 12", utcHour)
+	}
+	if estHour != 7 {
+		t.Errorf("EST hour = %d, want 7", estHour)
+	}
+	if pstHour != 4 {
+		t.Errorf("PST hour = %d, want 4", pstHour)
+	}
+}
+
+func TestDateMethod(t *testing.T) {
+	tests := []struct {
+		name  string
+		time  Time[UTC]
+		year  int
+		month time.Month
+		day   int
+	}{
+		{
+			name:  "new year",
+			time:  Date[UTC](2024, time.January, 1, 0, 0, 0, 0),
+			year:  2024,
+			month: time.January,
+			day:   1,
+		},
+		{
+			name:  "leap day",
+			time:  Date[UTC](2024, time.February, 29, 12, 0, 0, 0),
+			year:  2024,
+			month: time.February,
+			day:   29,
+		},
+		{
+			name:  "end of year",
+			time:  Date[UTC](2024, time.December, 31, 23, 59, 59, 0),
+			year:  2024,
+			month: time.December,
+			day:   31,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			year, month, day := tt.time.Date()
+			if year != tt.year || month != tt.month || day != tt.day {
+				t.Errorf("Date() = (%d, %s, %d), want (%d, %s, %d)",
+					year, month, day, tt.year, tt.month, tt.day)
+			}
+		})
+	}
+}
+
+func TestDateMethodAcrossTimezones(t *testing.T) {
+	// Create a time at 1 AM UTC on Jan 2 (which is 8 PM EST on Jan 1, 5 PM PST on Jan 1)
+	utcTime := Date[UTC](2024, time.January, 2, 1, 0, 0, 0)
+	estTime := Date[EST](2024, time.January, 1, 20, 0, 0, 0)
+	pstTime := Date[PST](2024, time.January, 1, 17, 0, 0, 0)
+
+	// Verify same moment
+	if !utcTime.Equal(estTime) || !utcTime.Equal(pstTime) {
+		t.Fatal("Times should represent the same moment")
+	}
+
+	// Date() should return different dates based on timezone
+	utcYear, utcMonth, utcDay := utcTime.Date()
+	estYear, estMonth, estDay := estTime.Date()
+	pstYear, pstMonth, pstDay := pstTime.Date()
+
+	if utcDay != 2 {
+		t.Errorf("UTC day = %d, want 2", utcDay)
+	}
+	if estDay != 1 {
+		t.Errorf("EST day = %d, want 1", estDay)
+	}
+	if pstDay != 1 {
+		t.Errorf("PST day = %d, want 1", pstDay)
+	}
+
+	// All should be January 2024
+	if utcYear != 2024 || utcMonth != time.January {
+		t.Error("UTC date should be January 2024")
+	}
+	if estYear != 2024 || estMonth != time.January {
+		t.Error("EST date should be January 2024")
+	}
+	if pstYear != 2024 || pstMonth != time.January {
+		t.Error("PST date should be January 2024")
+	}
+}
+
+func TestIndividualDateComponents(t *testing.T) {
+	testTime := Date[UTC](2024, time.June, 15, 14, 30, 45, 123456789)
+
+	if testTime.Year() != 2024 {
+		t.Errorf("Year() = %d, want 2024", testTime.Year())
+	}
+
+	if testTime.Month() != time.June {
+		t.Errorf("Month() = %s, want June", testTime.Month())
+	}
+
+	if testTime.Day() != 15 {
+		t.Errorf("Day() = %d, want 15", testTime.Day())
+	}
+}
+
+func TestIndividualTimeComponents(t *testing.T) {
+	testTime := Date[UTC](2024, time.June, 15, 14, 30, 45, 123456789)
+
+	if testTime.Hour() != 14 {
+		t.Errorf("Hour() = %d, want 14", testTime.Hour())
+	}
+
+	if testTime.Minute() != 30 {
+		t.Errorf("Minute() = %d, want 30", testTime.Minute())
+	}
+
+	if testTime.Second() != 45 {
+		t.Errorf("Second() = %d, want 45", testTime.Second())
+	}
+
+	if testTime.Nanosecond() != 123456789 {
+		t.Errorf("Nanosecond() = %d, want 123456789", testTime.Nanosecond())
+	}
+}
+
+func TestWeekday(t *testing.T) {
+	tests := []struct {
+		name    string
+		time    Time[UTC]
+		weekday time.Weekday
+	}{
+		{
+			name:    "Monday",
+			time:    Date[UTC](2024, time.January, 15, 12, 0, 0, 0),
+			weekday: time.Monday,
+		},
+		{
+			name:    "Sunday",
+			time:    Date[UTC](2024, time.January, 21, 12, 0, 0, 0),
+			weekday: time.Sunday,
+		},
+		{
+			name:    "Saturday",
+			time:    Date[UTC](2024, time.January, 20, 12, 0, 0, 0),
+			weekday: time.Saturday,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.time.Weekday() != tt.weekday {
+				t.Errorf("Weekday() = %s, want %s", tt.time.Weekday(), tt.weekday)
+			}
+		})
+	}
+}
+
+func TestWeekdayAcrossTimezones(t *testing.T) {
+	// Create a time at midnight UTC on Monday (which is Sunday evening in PST)
+	utcMonday := Date[UTC](2024, time.January, 15, 0, 0, 0, 0)  // Monday midnight UTC
+	pstSunday := Date[PST](2024, time.January, 14, 16, 0, 0, 0) // Sunday 4 PM PST
+
+	// Verify same moment
+	if !utcMonday.Equal(pstSunday) {
+		t.Fatal("Times should represent the same moment")
+	}
+
+	// Weekday should differ based on timezone
+	if utcMonday.Weekday() != time.Monday {
+		t.Errorf("UTC weekday = %s, want Monday", utcMonday.Weekday())
+	}
+	if pstSunday.Weekday() != time.Sunday {
+		t.Errorf("PST weekday = %s, want Sunday", pstSunday.Weekday())
+	}
+}
+
+func TestYearDay(t *testing.T) {
+	tests := []struct {
+		name    string
+		time    Time[UTC]
+		yearDay int
+	}{
+		{
+			name:    "first day of year",
+			time:    Date[UTC](2024, time.January, 1, 0, 0, 0, 0),
+			yearDay: 1,
+		},
+		{
+			name:    "leap day",
+			time:    Date[UTC](2024, time.February, 29, 12, 0, 0, 0),
+			yearDay: 60,
+		},
+		{
+			name:    "last day of leap year",
+			time:    Date[UTC](2024, time.December, 31, 23, 59, 59, 0),
+			yearDay: 366,
+		},
+		{
+			name:    "last day of non-leap year",
+			time:    Date[UTC](2023, time.December, 31, 23, 59, 59, 0),
+			yearDay: 365,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.time.YearDay() != tt.yearDay {
+				t.Errorf("YearDay() = %d, want %d", tt.time.YearDay(), tt.yearDay)
+			}
+		})
+	}
+}
+
+func TestISOWeek(t *testing.T) {
+	tests := []struct {
+		name string
+		time Time[UTC]
+		year int
+		week int
+	}{
+		{
+			name: "first week of 2024",
+			time: Date[UTC](2024, time.January, 8, 12, 0, 0, 0),
+			year: 2024,
+			week: 2,
+		},
+		{
+			name: "last week of year belongs to next year",
+			time: Date[UTC](2024, time.December, 30, 12, 0, 0, 0),
+			year: 2025,
+			week: 1,
+		},
+		{
+			name: "mid-year week",
+			time: Date[UTC](2024, time.June, 15, 12, 0, 0, 0),
+			year: 2024,
+			week: 24,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			year, week := tt.time.ISOWeek()
+			if year != tt.year || week != tt.week {
+				t.Errorf("ISOWeek() = (%d, %d), want (%d, %d)", year, week, tt.year, tt.week)
+			}
+		})
+	}
+}
+
+func TestComponentsRespectTimezone(t *testing.T) {
+	// Create the same UTC moment represented in different timezones
+	// 2024-01-15 18:00 UTC = 2024-01-15 13:00 EST = 2024-01-15 10:00 PST
+	utcTime := Date[UTC](2024, time.January, 15, 18, 0, 0, 0)
+	estTime := Date[EST](2024, time.January, 15, 13, 0, 0, 0)
+	pstTime := Date[PST](2024, time.January, 15, 10, 0, 0, 0)
+
+	// Verify same moment
+	if !utcTime.Equal(estTime) || !utcTime.Equal(pstTime) {
+		t.Fatal("Times should represent the same moment")
+	}
+
+	// Hours should be different
+	if utcTime.Hour() != 18 {
+		t.Errorf("UTC hour = %d, want 18", utcTime.Hour())
+	}
+	if estTime.Hour() != 13 {
+		t.Errorf("EST hour = %d, want 13", estTime.Hour())
+	}
+	if pstTime.Hour() != 10 {
+		t.Errorf("PST hour = %d, want 10", pstTime.Hour())
+	}
+
+	// But minutes, seconds, nanoseconds should be the same
+	if utcTime.Minute() != 0 || estTime.Minute() != 0 || pstTime.Minute() != 0 {
+		t.Error("Minutes should all be 0")
+	}
+	if utcTime.Second() != 0 || estTime.Second() != 0 || pstTime.Second() != 0 {
+		t.Error("Seconds should all be 0")
+	}
+}

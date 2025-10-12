@@ -125,6 +125,77 @@ func (t Time[TZ]) IsZero() bool {
 	return t.utcTime.IsZero()
 }
 
+// Component Extraction
+
+// Clock returns the hour, minute, and second within the day specified by t,
+// in the timezone's location.
+func (t Time[TZ]) Clock() (hour, minute, sec int) {
+	return t.nativeTimeInLocation().Clock()
+}
+
+// Date returns the year, month, and day in which t occurs, in the timezone's location.
+func (t Time[TZ]) Date() (year int, month time.Month, day int) {
+	return t.nativeTimeInLocation().Date()
+}
+
+// Year returns the year in which t occurs, in the timezone's location.
+func (t Time[TZ]) Year() int {
+	return t.nativeTimeInLocation().Year()
+}
+
+// Month returns the month of the year specified by t, in the timezone's location.
+func (t Time[TZ]) Month() time.Month {
+	return t.nativeTimeInLocation().Month()
+}
+
+// Day returns the day of the month specified by t, in the timezone's location.
+func (t Time[TZ]) Day() int {
+	return t.nativeTimeInLocation().Day()
+}
+
+// Hour returns the hour within the day specified by t, in the range [0, 23],
+// in the timezone's location.
+func (t Time[TZ]) Hour() int {
+	return t.nativeTimeInLocation().Hour()
+}
+
+// Minute returns the minute offset within the hour specified by t, in the range [0, 59],
+// in the timezone's location.
+func (t Time[TZ]) Minute() int {
+	return t.nativeTimeInLocation().Minute()
+}
+
+// Second returns the second offset within the minute specified by t, in the range [0, 59],
+// in the timezone's location.
+func (t Time[TZ]) Second() int {
+	return t.nativeTimeInLocation().Second()
+}
+
+// Nanosecond returns the nanosecond offset within the second specified by t,
+// in the range [0, 999999999], in the timezone's location.
+func (t Time[TZ]) Nanosecond() int {
+	return t.nativeTimeInLocation().Nanosecond()
+}
+
+// Weekday returns the day of the week specified by t, in the timezone's location.
+func (t Time[TZ]) Weekday() time.Weekday {
+	return t.nativeTimeInLocation().Weekday()
+}
+
+// YearDay returns the day of the year specified by t, in the range [1, 365] for non-leap years,
+// and [1, 366] in leap years, in the timezone's location.
+func (t Time[TZ]) YearDay() int {
+	return t.nativeTimeInLocation().YearDay()
+}
+
+// ISOWeek returns the ISO 8601 year and week number in which t occurs.
+// Week ranges from 1 to 53. Jan 01 to Jan 03 of year n might belong to
+// week 52 or 53 of year n-1, and Dec 29 to Dec 31 might belong to week 1
+// of year n+1. Computed in the timezone's location.
+func (t Time[TZ]) ISOWeek() (year, week int) {
+	return t.nativeTimeInLocation().ISOWeek()
+}
+
 // nativeTimeInLocation returns the native time in the location of the timezone.
 func (t Time[TZ]) nativeTimeInLocation() time.Time {
 	// This is a bit of a hack to get the timezone's location.
