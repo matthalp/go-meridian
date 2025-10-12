@@ -2,6 +2,7 @@ package meridian
 
 import (
 	"bytes"
+	"database/sql/driver"
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
@@ -2510,5 +2511,313 @@ func TestSerializationPreservesNanoseconds(t *testing.T) {
 				t.Errorf("Equal() = false, want true")
 			}
 		})
+	}
+}
+
+func TestValue(t *testing.T) {
+	testTime := Date[UTC](2024, time.June, 15, 14, 30, 45, 123456789)
+
+	value, err := testTime.Value()
+	if err != nil {
+		t.Fatalf("Value() error = %v", err)
+	}
+
+	// Should return time.Time
+	stdTime, ok := value.(time.Time)
+	if !ok {
+		t.Fatalf("Value() returned type %T, want time.Time", value)
+	}
+
+	// Should be in UTC
+	if stdTime.Location() != time.UTC {
+		t.Errorf("Value() location = %v, want UTC", stdTime.Location())
+	}
+
+	// Should be equal to internal UTC time
+	if !stdTime.Equal(testTime.UTC()) {
+		t.Errorf("Value() = %v, want %v", stdTime, testTime.UTC())
+	}
+}
+
+func TestValueAcrossTimezones(t *testing.T) {
+	// Same moment in different timezones should produce same Value
+	utcTime := Date[UTC](2024, time.January, 15, 12, 0, 0, 0)
+	estTime := Date[EST](2024, time.January, 15, 7, 0, 0, 0) // Same moment
+
+	utcValue, err := utcTime.Value()
+	if err != nil {
+		t.Fatalf("UTC Value() error = %v", err)
+	}
+
+	estValue, err := estTime.Value()
+	if err != nil {
+		t.Fatalf("EST Value() error = %v", err)
+	}
+
+	utcStd := utcValue.(time.Time)
+	estStd := estValue.(time.Time)
+
+	if !utcStd.Equal(estStd) {
+		t.Errorf("Value() for same moment differs: UTC = %v, EST = %v", utcStd, estStd)
+	}
+}
+
+func TestValueWithZeroTime(t *testing.T) {
+	var zeroTime Time[UTC]
+
+	value, err := zeroTime.Value()
+	if err != nil {
+		t.Fatalf("Value() error = %v", err)
+	}
+
+	stdTime := value.(time.Time)
+	if !stdTime.IsZero() {
+		t.Errorf("Value() for zero time = %v, want zero time", stdTime)
+	}
+}
+
+func TestScan(t *testing.T) {
+	sourceTime := time.Date(2024, time.June, 15, 14, 30, 45, 123456789, time.UTC)
+
+	var testTime Time[UTC]
+	err := testTime.Scan(sourceTime)
+	if err != nil {
+		t.Fatalf("Scan() error = %v", err)
+	}
+
+	// Should store as UTC
+	if !testTime.UTC().Equal(sourceTime) {
+		t.Errorf("Scan() stored %v, want %v", testTime.UTC(), sourceTime)
+	}
+
+	// Components should match
+	if testTime.Year() != 2024 {
+		t.Errorf("Year() = %d, want 2024", testTime.Year())
+	}
+	if testTime.Nanosecond() != 123456789 {
+		t.Errorf("Nanosecond() = %d, want 123456789", testTime.Nanosecond())
+	}
+}
+
+func TestScanWithDifferentLocation(t *testing.T) {
+	// Scan a time in EST location
+	estLoc, _ := time.LoadLocation("America/New_York")
+	sourceTime := time.Date(2024, time.January, 15, 7, 0, 0, 0, estLoc)
+
+	var utcTime Time[UTC]
+	err := utcTime.Scan(sourceTime)
+	if err != nil {
+		t.Fatalf("Scan() error = %v", err)
+	}
+
+	// Should be converted to UTC internally
+	if utcTime.UTC().Location() != time.UTC {
+		t.Errorf("Scan() location = %v, want UTC", utcTime.UTC().Location())
+	}
+
+	// Should represent the same moment
+	if !utcTime.UTC().Equal(sourceTime.UTC()) {
+		t.Errorf("Scan() stored different moment: got %v, source was %v",
+			utcTime.UTC(), sourceTime.UTC())
+	}
+}
+
+func TestScanNil(t *testing.T) {
+	// Set to non-zero first
+	testTime := Date[UTC](2024, time.June, 15, 14, 30, 45, 0)
+
+	err := testTime.Scan(nil)
+	if err != nil {
+		t.Fatalf("Scan(nil) error = %v", err)
+	}
+
+	if !testTime.IsZero() {
+		t.Errorf("Scan(nil) should set to zero time, got %v", testTime)
+	}
+}
+
+func TestScanInvalidType(t *testing.T) {
+	var testTime Time[UTC]
+
+	tests := []struct {
+		name  string
+		value interface{}
+	}{
+		{"string", "2024-06-15T14:30:45Z"},
+		{"int", 1234567890},
+		{"float", 123.456},
+		{"bytes", []byte("2024-06-15")},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := testTime.Scan(tt.value)
+			if err == nil {
+				t.Errorf("Scan(%T) should return error, got nil", tt.value)
+			}
+		})
+	}
+}
+
+func TestSQLRoundTrip(t *testing.T) {
+	original := Date[UTC](2024, time.June, 15, 14, 30, 45, 123456789)
+
+	// Simulate database storage: Value() -> Scan()
+	value, err := original.Value()
+	if err != nil {
+		t.Fatalf("Value() error = %v", err)
+	}
+
+	var decoded Time[UTC]
+	err = decoded.Scan(value)
+	if err != nil {
+		t.Fatalf("Scan() error = %v", err)
+	}
+
+	// Should be equal (comparing UTC times)
+	if !decoded.UTC().Equal(original.UTC()) {
+		t.Errorf("Round trip failed: original = %v, decoded = %v", original, decoded)
+	}
+
+	// Should preserve nanoseconds
+	if decoded.Nanosecond() != original.Nanosecond() {
+		t.Errorf("Nanosecond() = %d, want %d", decoded.Nanosecond(), original.Nanosecond())
+	}
+}
+
+func TestSQLAcrossTimezones(t *testing.T) {
+	// Store as UTC
+	utcTime := Date[UTC](2024, time.January, 15, 12, 0, 0, 0)
+	value, err := utcTime.Value()
+	if err != nil {
+		t.Fatalf("Value() error = %v", err)
+	}
+
+	// Retrieve as EST
+	var estTime Time[EST]
+	err = estTime.Scan(value)
+	if err != nil {
+		t.Fatalf("Scan() error = %v", err)
+	}
+
+	// Should represent the same moment
+	if !utcTime.UTC().Equal(estTime.UTC()) {
+		t.Errorf("Cross-timezone SQL failed: UTC = %v, EST = %v",
+			utcTime.UTC(), estTime.UTC())
+	}
+
+	// But display differently
+	if utcTime.Hour() == estTime.Hour() {
+		t.Error("UTC and EST times should display different hours")
+	}
+	// UTC shows 12, EST should show 7 (12 - 5)
+	if estTime.Hour() != 7 {
+		t.Errorf("EST Hour() = %d, want 7", estTime.Hour())
+	}
+}
+
+func TestValueReturnsDriverValue(t *testing.T) {
+	testTime := Date[UTC](2024, time.June, 15, 14, 30, 45, 0)
+
+	value, err := testTime.Value()
+	if err != nil {
+		t.Fatalf("Value() error = %v", err)
+	}
+
+	// Verify it returns a valid driver.Value
+	// driver.Value can be: int64, float64, bool, []byte, string, time.Time, or nil
+	switch value.(type) {
+	case int64, float64, bool, []byte, string, time.Time, nil:
+		// Valid driver.Value types
+	default:
+		t.Errorf("Value() returned invalid driver.Value type: %T", value)
+	}
+}
+
+func TestSQLInStruct(t *testing.T) {
+	type Event struct {
+		ID        int
+		Name      string
+		Timestamp Time[UTC]
+	}
+
+	original := Event{
+		ID:        1,
+		Name:      "Meeting",
+		Timestamp: Date[UTC](2024, time.June, 15, 14, 30, 0, 0),
+	}
+
+	// Simulate database storage
+	value, err := original.Timestamp.Value()
+	if err != nil {
+		t.Fatalf("Value() error = %v", err)
+	}
+
+	// Simulate database retrieval
+	var retrieved Event
+	retrieved.ID = original.ID
+	retrieved.Name = original.Name
+	err = retrieved.Timestamp.Scan(value)
+	if err != nil {
+		t.Fatalf("Scan() error = %v", err)
+	}
+
+	// Verify fields match
+	if retrieved.ID != original.ID {
+		t.Errorf("ID = %d, want %d", retrieved.ID, original.ID)
+	}
+	if retrieved.Name != original.Name {
+		t.Errorf("Name = %s, want %s", retrieved.Name, original.Name)
+	}
+	if !retrieved.Timestamp.Equal(original.Timestamp) {
+		t.Errorf("Timestamp = %v, want %v", retrieved.Timestamp, original.Timestamp)
+	}
+}
+
+func TestValueScanConsistency(t *testing.T) {
+	// Test that multiple Value() calls return consistent results
+	testTime := Date[UTC](2024, time.June, 15, 14, 30, 45, 123456789)
+
+	value1, _ := testTime.Value()
+	value2, _ := testTime.Value()
+
+	stdTime1 := value1.(time.Time)
+	stdTime2 := value2.(time.Time)
+
+	if !stdTime1.Equal(stdTime2) {
+		t.Error("Multiple Value() calls returned different times")
+	}
+}
+
+func TestScanPreservesNanoseconds(t *testing.T) {
+	// Create time with precise nanoseconds
+	sourceTime := time.Date(2024, time.June, 15, 14, 30, 45, 123456789, time.UTC)
+
+	var testTime Time[UTC]
+	err := testTime.Scan(sourceTime)
+	if err != nil {
+		t.Fatalf("Scan() error = %v", err)
+	}
+
+	if testTime.Nanosecond() != 123456789 {
+		t.Errorf("Nanosecond() = %d, want 123456789", testTime.Nanosecond())
+	}
+}
+
+func TestDriverValuerInterface(t *testing.T) {
+	testTime := Date[UTC](2024, time.June, 15, 14, 30, 45, 0)
+
+	// Verify it implements driver.Valuer
+	var _ driver.Valuer = testTime
+
+	// Call through interface
+	var valuer driver.Valuer = testTime
+	value, err := valuer.Value()
+	if err != nil {
+		t.Fatalf("driver.Valuer.Value() error = %v", err)
+	}
+
+	if value == nil {
+		t.Error("driver.Valuer.Value() returned nil")
 	}
 }
