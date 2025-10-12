@@ -23,8 +23,10 @@ This is a **distributable library** intended for consumption by other Go project
 
 ### 3. Explicit Conversions
 - Timezone conversions must be explicit: `est.Convert(pacificTime)`
+- Conversions use the `Moment` interface, supporting both `time.Time` and `meridian.Time[TZ]`
 - This makes timezone handling visible in code review
 - No silent timezone changes or data loss
+- All conversions preserve the moment in time (UTC equality)
 
 ### 4. Internal UTC Storage
 - All times are stored as UTC internally (`utcTime time.Time`)
@@ -168,14 +170,41 @@ meeting := pst.Date(2024, 3, 15, 9, 0, 0, 0)
 
 // From standard time.Time
 stdTime := time.Now()
-typed := meridian.Wrap[utc.UTC](stdTime)  // (if Wrap exists)
+typed := utc.Convert(stdTime)  // Convert using Moment interface
 ```
 
 ### Converting Between Timezones
 ```go
+// Using timezone package Convert functions
 eastern := est.Now()
-pacific := meridian.Convert[pst.PST](eastern)  // Explicit conversion
-utcTime := meridian.Convert[utc.UTC](eastern)  // To UTC for storage
+pacific := pst.Convert(eastern)  // Explicit conversion
+utcTime := utc.Convert(eastern)  // To UTC for storage
+
+// Convert from time.Time
+stdTime := time.Now()
+utcTyped := utc.Convert(stdTime)
+estTyped := est.Convert(stdTime)
+
+// All conversions preserve the moment in time
+fmt.Println(eastern.UTC().Equal(pacific.UTC()))  // true
+```
+
+### The Moment Interface
+```go
+// Both time.Time and meridian.Time[TZ] implement Moment
+type Moment interface {
+    UTC() time.Time
+}
+
+// Functions can accept any Moment
+func processTime(m Moment) {
+    utcTime := m.UTC()  // Get underlying UTC time
+    // ... process ...
+}
+
+// Works with both types
+processTime(time.Now())
+processTime(est.Now())
 ```
 
 ### Preserving Types Through Operations
@@ -223,8 +252,13 @@ func GetUTC[TZ Timezone](t Time[TZ]) time.Time {
 ### ✅ Do: Maintain type-safety
 ```go
 // Good: Explicit conversion to UTC type
-func GetUTC[TZ Timezone](t Time[TZ]) Time[utc.UTC] {
-    return Convert[utc.UTC](t)
+func GetUTC[TZ Timezone](t Time[TZ]) utc.Time {
+    return utc.Convert(t)
+}
+
+// Or use the Moment interface for flexibility
+func GetUTC(m Moment) utc.Time {
+    return utc.Convert(m)
 }
 ```
 

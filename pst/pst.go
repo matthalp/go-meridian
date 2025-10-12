@@ -41,3 +41,8 @@ func Now() Time {
 func Date(year int, month time.Month, day, hour, minute, sec, nsec int) Time {
 	return meridian.Date[Timezone](year, month, day, hour, minute, sec, nsec)
 }
+
+// Convert converts any Moment to PST time.
+func Convert(m meridian.Moment) Time {
+	return meridian.FromMoment[Timezone](m)
+}

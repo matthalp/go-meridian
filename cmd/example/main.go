@@ -45,6 +45,32 @@ func main() {
 	printUTCTime(utc.Now())
 	printESTTime(est.Now())
 	// Note: printUTCTime(est.Now()) would not compile due to type safety
+	fmt.Println()
+
+	// Example 5: Converting between timezones
+	fmt.Println("5. Timezone Conversion:")
+	estMeeting := est.Date(2024, time.December, 25, 10, 30, 0, 0)
+	utcMeeting := utc.Convert(estMeeting)
+	pstMeeting := pst.Convert(estMeeting)
+
+	fmt.Printf("   Meeting EST: %s\n", estMeeting.Format(time.Kitchen))
+	fmt.Printf("   Meeting UTC: %s\n", utcMeeting.Format(time.Kitchen))
+	fmt.Printf("   Meeting PST: %s\n", pstMeeting.Format(time.Kitchen))
+	fmt.Println()
+
+	// Example 6: Converting from standard time.Time
+	fmt.Println("6. Converting from time.Time:")
+	stdTime := time.Date(2024, time.June, 15, 18, 0, 0, 0, time.UTC)
+	fmt.Printf("   Standard time.Time: %s\n", stdTime.Format(time.RFC3339))
+
+	// Convert to timezone-specific types
+	utcFromStd := utc.Convert(stdTime)
+	estFromStd := est.Convert(stdTime)
+	pstFromStd := pst.Convert(stdTime)
+
+	fmt.Printf("   As UTC: %s\n", utcFromStd.Format("3:04 PM MST"))
+	fmt.Printf("   As EST: %s\n", estFromStd.Format("3:04 PM MST"))
+	fmt.Printf("   As PST: %s\n", pstFromStd.Format("3:04 PM MST"))
 }
 
 // printUTCTime accepts only UTC times.
