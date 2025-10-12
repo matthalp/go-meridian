@@ -168,10 +168,20 @@ now := est.Now()
 // From specific date/time
 meeting := pst.Date(2024, 3, 15, 9, 0, 0, 0)
 
+// From formatted string (parsed in the timezone's location)
+parsed, _ := est.Parse(time.RFC3339, "2024-03-15T09:00:00-04:00")
+
+// From Unix timestamps
+unixTime := utc.Unix(1705320000, 0)           // seconds + nanoseconds
+milliTime := pst.UnixMilli(1705320000000)     // milliseconds
+microTime := est.UnixMicro(1705320000000000)  // microseconds
+
 // From standard time.Time
 stdTime := time.Now()
 typed := utc.Convert(stdTime)  // Convert using Moment interface
 ```
+
+**Note**: `ParseInLocation` from the `time` package is not needed in timezone packages because the location is already determined by the package (e.g., `utc.Parse` always parses in UTC, `est.Parse` in EST, `pst.Parse` in PST).
 
 ### Converting Between Timezones
 ```go
@@ -381,6 +391,40 @@ func Now() Time {
 func Date(year int, month time.Month, day, hour, minute, sec, nsec int) Time {
     return meridian.Date[Timezone](year, month, day, hour, minute, sec, nsec)
 }
+
+// Convert converts any Moment to JST time.
+func Convert(m meridian.Moment) Time {
+    return meridian.FromMoment[Timezone](m)
+}
+
+// Parse parses a formatted string and returns the time value it represents in JST.
+// The layout defines the format by showing how the reference time would be displayed.
+// Note: ParseInLocation is not needed as the location is already JST.
+func Parse(layout, value string) (Time, error) {
+    t, err := time.ParseInLocation(layout, value, location)
+    if err != nil {
+        return Time{}, err
+    }
+    return meridian.FromMoment[Timezone](t), nil
+}
+
+// Unix returns the JST time corresponding to the given Unix time,
+// sec seconds and nsec nanoseconds since January 1, 1970 UTC.
+func Unix(sec, nsec int64) Time {
+    return meridian.FromMoment[Timezone](time.Unix(sec, nsec))
+}
+
+// UnixMilli returns the JST time corresponding to the given Unix time,
+// msec milliseconds since January 1, 1970 UTC.
+func UnixMilli(msec int64) Time {
+    return meridian.FromMoment[Timezone](time.UnixMilli(msec))
+}
+
+// UnixMicro returns the JST time corresponding to the given Unix time,
+// usec microseconds since January 1, 1970 UTC.
+func UnixMicro(usec int64) Time {
+    return meridian.FromMoment[Timezone](time.UnixMicro(usec))
+}
 ```
 
 **Key points:**
@@ -389,6 +433,7 @@ func Date(year int, month time.Month, day, hour, minute, sec, nsec int) Time {
 - Location loaded once at init in a package variable for efficiency
 - `mustLoadLocation` helper panics early if timezone database is missing
 - Consistent comments and structure across all timezone packages
+- All factory methods (Now, Date, Parse, Unix, UnixMilli, UnixMicro, Convert) follow the same pattern
 
 ## Questions to Ask Before Committing
 

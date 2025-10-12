@@ -87,8 +87,12 @@ formatted := t.Format(time.Kitchen) // Definitely UTC! ✅
 Each package provides:
 - `Now()` - Get current time in that timezone
 - `Date()` - Create a specific date/time
+- `Parse()` - Parse a formatted string in that timezone
+- `Unix()`, `UnixMilli()`, `UnixMicro()` - Create from Unix timestamps
 - `Convert()` - Convert any time to that timezone
 - `Time` - Type alias for clean function signatures
+
+Note: `ParseInLocation` is not needed as timezone packages already have their location built-in.
 
 ## Converting Between Timezones
 

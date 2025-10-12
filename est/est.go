@@ -46,3 +46,32 @@ func Date(year int, month time.Month, day, hour, minute, sec, nsec int) Time {
 func Convert(m meridian.Moment) Time {
 	return meridian.FromMoment[Timezone](m)
 }
+
+// Parse parses a formatted string and returns the time value it represents in EST.
+// The layout defines the format by showing how the reference time would be displayed.
+// Note: ParseInLocation is not needed as the location is already EST.
+func Parse(layout, value string) (Time, error) {
+	t, err := time.ParseInLocation(layout, value, location)
+	if err != nil {
+		return Time{}, err
+	}
+	return meridian.FromMoment[Timezone](t), nil
+}
+
+// Unix returns the EST time corresponding to the given Unix time,
+// sec seconds and nsec nanoseconds since January 1, 1970 UTC.
+func Unix(sec, nsec int64) Time {
+	return meridian.FromMoment[Timezone](time.Unix(sec, nsec))
+}
+
+// UnixMilli returns the EST time corresponding to the given Unix time,
+// msec milliseconds since January 1, 1970 UTC.
+func UnixMilli(msec int64) Time {
+	return meridian.FromMoment[Timezone](time.UnixMilli(msec))
+}
+
+// UnixMicro returns the EST time corresponding to the given Unix time,
+// usec microseconds since January 1, 1970 UTC.
+func UnixMicro(usec int64) Time {
+	return meridian.FromMoment[Timezone](time.UnixMicro(usec))
+}

@@ -143,6 +143,71 @@ func storeInDatabase(t utc.Time) { /* ... */ }
 func displayToUser(t est.Time) { /* ... */ }
 ```
 
+### Creating Times from Various Sources
+
+Each timezone package provides multiple factory methods for creating times:
+
+```go
+package main
+
+import (
+    "fmt"
+    "time"
+    
+    "github.com/matthalp/go-meridian/est"
+    "github.com/matthalp/go-meridian/pst"
+    "github.com/matthalp/go-meridian/utc"
+)
+
+func main() {
+    // From current time
+    now := utc.Now()
+    
+    // From specific date/time
+    meeting := est.Date(2024, time.December, 25, 10, 30, 0, 0)
+    
+    // From formatted string (parsed in the timezone's location)
+    parsed, err := utc.Parse(time.RFC3339, "2024-01-15T12:00:00Z")
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println(parsed.Format(time.Kitchen))
+    
+    // From Unix timestamp (seconds + nanoseconds)
+    t1 := utc.Unix(1705320000, 0)
+    
+    // From Unix milliseconds
+    t2 := pst.UnixMilli(1705320000000)
+    
+    // From Unix microseconds
+    t3 := est.UnixMicro(1705320000000000)
+    
+    // All timestamps represent the same moment
+    fmt.Println(t1.UTC().Equal(t2.UTC())) // true
+    fmt.Println(t2.UTC().Equal(t3.UTC())) // true
+}
+```
+
+**Important Note**: `ParseInLocation` from the standard `time` package is not needed in Meridian timezone packages because the location is already determined by the package (e.g., `est.Parse` always parses in EST, `utc.Parse` in UTC).
+
+### Timezone-Specific Parsing
+
+The `Parse` function in each timezone package interprets the input string in that timezone's location:
+
+```go
+// Parse the same clock time in different timezones
+estTime, _ := est.Parse("2006-01-02 15:04:05", "2024-01-15 12:00:00")
+pstTime, _ := pst.Parse("2006-01-02 15:04:05", "2024-01-15 12:00:00")
+utcTime, _ := utc.Parse("2006-01-02 15:04:05", "2024-01-15 12:00:00")
+
+// These represent different moments in time!
+// EST noon happens 5 hours after UTC noon
+// PST noon happens 8 hours after UTC noon
+fmt.Println(estTime.UTC()) // 2024-01-15 17:00:00 +0000 UTC
+fmt.Println(pstTime.UTC()) // 2024-01-15 20:00:00 +0000 UTC
+fmt.Println(utcTime.UTC()) // 2024-01-15 12:00:00 +0000 UTC
+```
+
 ### The Moment Interface
 
 Both `time.Time` and `meridian.Time[TZ]` implement the `Moment` interface:
@@ -293,6 +358,30 @@ To add a new timezone package (e.g., `jst` for Japan Standard Time):
    
    func Date(year int, month time.Month, day, hour, minute, sec, nsec int) Time {
        return meridian.Date[Timezone](year, month, day, hour, minute, sec, nsec)
+   }
+   
+   func Convert(m meridian.Moment) Time {
+       return meridian.FromMoment[Timezone](m)
+   }
+   
+   func Parse(layout, value string) (Time, error) {
+       t, err := time.ParseInLocation(layout, value, location)
+       if err != nil {
+           return Time{}, err
+       }
+       return meridian.FromMoment[Timezone](t), nil
+   }
+   
+   func Unix(sec, nsec int64) Time {
+       return meridian.FromMoment[Timezone](time.Unix(sec, nsec))
+   }
+   
+   func UnixMilli(msec int64) Time {
+       return meridian.FromMoment[Timezone](time.UnixMilli(msec))
+   }
+   
+   func UnixMicro(usec int64) Time {
+       return meridian.FromMoment[Timezone](time.UnixMicro(usec))
    }
    ```
 
