@@ -1,6 +1,9 @@
 package meridian
 
 import (
+	"bytes"
+	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -2029,5 +2032,483 @@ func TestUnixWithZeroTime(t *testing.T) {
 	}
 	if unixNano >= 0 {
 		t.Errorf("Zero time UnixNano() = %d, expected negative (before 1970)", unixNano)
+	}
+}
+
+func TestMarshalJSON(t *testing.T) {
+	testTime := Date[UTC](2024, time.June, 15, 14, 30, 45, 123456789)
+
+	data, err := json.Marshal(testTime)
+	if err != nil {
+		t.Fatalf("MarshalJSON() error = %v", err)
+	}
+
+	// The result should be a quoted RFC 3339 string
+	expected := `"2024-06-15T14:30:45.123456789Z"`
+	if string(data) != expected {
+		t.Errorf("MarshalJSON() = %s, want %s", string(data), expected)
+	}
+}
+
+func TestMarshalJSONInDifferentTimezones(t *testing.T) {
+	// Same moment in different timezones should marshal differently
+	utcTime := Date[UTC](2024, time.January, 15, 12, 0, 0, 0)
+	estTime := Date[EST](2024, time.January, 15, 7, 0, 0, 0) // Same moment
+
+	utcJSON, err := json.Marshal(utcTime)
+	if err != nil {
+		t.Fatalf("MarshalJSON(UTC) error = %v", err)
+	}
+
+	estJSON, err := json.Marshal(estTime)
+	if err != nil {
+		t.Fatalf("MarshalJSON(EST) error = %v", err)
+	}
+
+	// They should have different string representations (different offsets)
+	utcStr := string(utcJSON)
+	estStr := string(estJSON)
+
+	if !contains(utcStr, "Z") {
+		t.Errorf("UTC JSON = %s, should contain 'Z'", utcStr)
+	}
+	if !contains(estStr, "-05:00") {
+		t.Errorf("EST JSON = %s, should contain '-05:00'", estStr)
+	}
+}
+
+func TestUnmarshalJSON(t *testing.T) {
+	jsonData := []byte(`"2024-06-15T14:30:45.123456789Z"`)
+
+	var testTime Time[UTC]
+	err := json.Unmarshal(jsonData, &testTime)
+	if err != nil {
+		t.Fatalf("UnmarshalJSON() error = %v", err)
+	}
+
+	// Check components
+	if testTime.Year() != 2024 {
+		t.Errorf("Year() = %d, want 2024", testTime.Year())
+	}
+	if testTime.Month() != time.June {
+		t.Errorf("Month() = %v, want June", testTime.Month())
+	}
+	if testTime.Day() != 15 {
+		t.Errorf("Day() = %d, want 15", testTime.Day())
+	}
+}
+
+func TestJSONRoundTrip(t *testing.T) {
+	original := Date[UTC](2024, time.June, 15, 14, 30, 45, 123456789)
+
+	// Marshal
+	data, err := json.Marshal(original)
+	if err != nil {
+		t.Fatalf("Marshal error = %v", err)
+	}
+
+	// Unmarshal
+	var decoded Time[UTC]
+	err = json.Unmarshal(data, &decoded)
+	if err != nil {
+		t.Fatalf("Unmarshal error = %v", err)
+	}
+
+	// Compare
+	if !original.Equal(decoded) {
+		t.Errorf("Round trip failed: original = %v, decoded = %v", original, decoded)
+	}
+}
+
+func TestJSONInStruct(t *testing.T) {
+	type Event struct {
+		Name string    `json:"name"`
+		When Time[UTC] `json:"when"`
+	}
+
+	event := Event{
+		Name: "Meeting",
+		When: Date[UTC](2024, time.June, 15, 14, 30, 0, 0),
+	}
+
+	// Marshal
+	data, err := json.Marshal(event)
+	if err != nil {
+		t.Fatalf("Marshal error = %v", err)
+	}
+
+	// Unmarshal
+	var decoded Event
+	err = json.Unmarshal(data, &decoded)
+	if err != nil {
+		t.Fatalf("Unmarshal error = %v", err)
+	}
+
+	if decoded.Name != event.Name {
+		t.Errorf("Name = %s, want %s", decoded.Name, event.Name)
+	}
+	if !decoded.When.Equal(event.When) {
+		t.Errorf("When = %v, want %v", decoded.When, event.When)
+	}
+}
+
+func TestMarshalText(t *testing.T) {
+	testTime := Date[UTC](2024, time.June, 15, 14, 30, 45, 123456789)
+
+	data, err := testTime.MarshalText()
+	if err != nil {
+		t.Fatalf("MarshalText() error = %v", err)
+	}
+
+	// Should be RFC 3339 format
+	expected := "2024-06-15T14:30:45.123456789Z"
+	if string(data) != expected {
+		t.Errorf("MarshalText() = %s, want %s", string(data), expected)
+	}
+}
+
+func TestMarshalTextInDifferentTimezones(t *testing.T) {
+	estTime := Date[EST](2024, time.January, 15, 7, 0, 0, 0)
+
+	data, err := estTime.MarshalText()
+	if err != nil {
+		t.Fatalf("MarshalText() error = %v", err)
+	}
+
+	// Should include EST offset
+	result := string(data)
+	if !contains(result, "-05:00") {
+		t.Errorf("MarshalText(EST) = %s, should contain '-05:00'", result)
+	}
+}
+
+func TestUnmarshalText(t *testing.T) {
+	textData := []byte("2024-06-15T14:30:45.123456789Z")
+
+	var testTime Time[UTC]
+	err := testTime.UnmarshalText(textData)
+	if err != nil {
+		t.Fatalf("UnmarshalText() error = %v", err)
+	}
+
+	if testTime.Year() != 2024 {
+		t.Errorf("Year() = %d, want 2024", testTime.Year())
+	}
+	if testTime.Nanosecond() != 123456789 {
+		t.Errorf("Nanosecond() = %d, want 123456789", testTime.Nanosecond())
+	}
+}
+
+func TestTextRoundTrip(t *testing.T) {
+	original := Date[UTC](2024, time.June, 15, 14, 30, 45, 123456789)
+
+	// Marshal
+	data, err := original.MarshalText()
+	if err != nil {
+		t.Fatalf("MarshalText error = %v", err)
+	}
+
+	// Unmarshal
+	var decoded Time[UTC]
+	err = decoded.UnmarshalText(data)
+	if err != nil {
+		t.Fatalf("UnmarshalText error = %v", err)
+	}
+
+	// Compare
+	if !original.Equal(decoded) {
+		t.Errorf("Round trip failed: original = %v, decoded = %v", original, decoded)
+	}
+}
+
+func TestAppendText(t *testing.T) {
+	testTime := Date[UTC](2024, time.June, 15, 14, 30, 45, 0)
+
+	tests := []struct {
+		name     string
+		initial  []byte
+		expected string
+	}{
+		{
+			name:     "append to empty",
+			initial:  []byte{},
+			expected: "2024-06-15T14:30:45Z",
+		},
+		{
+			name:     "append to existing",
+			initial:  []byte("Time: "),
+			expected: "Time: 2024-06-15T14:30:45Z",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := testTime.AppendText(tt.initial)
+			if err != nil {
+				t.Fatalf("AppendText() error = %v", err)
+			}
+			if string(result) != tt.expected {
+				t.Errorf("AppendText() = %s, want %s", string(result), tt.expected)
+			}
+		})
+	}
+}
+
+func TestMarshalBinary(t *testing.T) {
+	testTime := Date[UTC](2024, time.June, 15, 14, 30, 45, 123456789)
+
+	data, err := testTime.MarshalBinary()
+	if err != nil {
+		t.Fatalf("MarshalBinary() error = %v", err)
+	}
+
+	// Should produce non-empty binary data
+	if len(data) == 0 {
+		t.Error("MarshalBinary() produced empty data")
+	}
+}
+
+func TestUnmarshalBinary(t *testing.T) {
+	original := Date[UTC](2024, time.June, 15, 14, 30, 45, 123456789)
+
+	// Marshal
+	data, err := original.MarshalBinary()
+	if err != nil {
+		t.Fatalf("MarshalBinary() error = %v", err)
+	}
+
+	// Unmarshal
+	var decoded Time[UTC]
+	err = decoded.UnmarshalBinary(data)
+	if err != nil {
+		t.Fatalf("UnmarshalBinary() error = %v", err)
+	}
+
+	// Compare internal UTC times (binary format doesn't preserve timezone display)
+	if !original.UTC().Equal(decoded.UTC()) {
+		t.Errorf("Round trip failed: original UTC = %v, decoded UTC = %v",
+			original.UTC(), decoded.UTC())
+	}
+}
+
+func TestBinaryRoundTrip(t *testing.T) {
+	testCases := []Time[UTC]{
+		Date[UTC](2024, time.June, 15, 14, 30, 45, 123456789),
+		Date[UTC](1970, time.January, 1, 0, 0, 0, 0),    // Unix epoch
+		Date[UTC](2000, time.February, 29, 12, 0, 0, 0), // Leap year
+	}
+
+	for _, original := range testCases {
+		t.Run(original.Format(time.RFC3339), func(t *testing.T) {
+			// Marshal
+			data, err := original.MarshalBinary()
+			if err != nil {
+				t.Fatalf("MarshalBinary() error = %v", err)
+			}
+
+			// Unmarshal
+			var decoded Time[UTC]
+			err = decoded.UnmarshalBinary(data)
+			if err != nil {
+				t.Fatalf("UnmarshalBinary() error = %v", err)
+			}
+
+			// Compare
+			if !original.UTC().Equal(decoded.UTC()) {
+				t.Errorf("Round trip failed: original = %v, decoded = %v", original, decoded)
+			}
+		})
+	}
+}
+
+func TestAppendBinary(t *testing.T) {
+	testTime := Date[UTC](2024, time.June, 15, 14, 30, 45, 0)
+
+	initial := []byte("prefix")
+	result, err := testTime.AppendBinary(initial)
+	if err != nil {
+		t.Fatalf("AppendBinary() error = %v", err)
+	}
+
+	// Should start with the prefix
+	if !bytes.HasPrefix(result, initial) {
+		t.Error("AppendBinary() did not preserve prefix")
+	}
+
+	// Should be longer than initial
+	if len(result) <= len(initial) {
+		t.Error("AppendBinary() did not append data")
+	}
+}
+
+func TestGobEncode(t *testing.T) {
+	testTime := Date[UTC](2024, time.June, 15, 14, 30, 45, 123456789)
+
+	data, err := testTime.GobEncode()
+	if err != nil {
+		t.Fatalf("GobEncode() error = %v", err)
+	}
+
+	if len(data) == 0 {
+		t.Error("GobEncode() produced empty data")
+	}
+}
+
+func TestGobDecode(t *testing.T) {
+	original := Date[UTC](2024, time.June, 15, 14, 30, 45, 123456789)
+
+	// Encode
+	data, err := original.GobEncode()
+	if err != nil {
+		t.Fatalf("GobEncode() error = %v", err)
+	}
+
+	// Decode
+	var decoded Time[UTC]
+	err = decoded.GobDecode(data)
+	if err != nil {
+		t.Fatalf("GobDecode() error = %v", err)
+	}
+
+	// Compare
+	if !original.UTC().Equal(decoded.UTC()) {
+		t.Errorf("Gob round trip failed: original = %v, decoded = %v", original, decoded)
+	}
+}
+
+func TestGobRoundTripInStruct(t *testing.T) {
+	type Event struct {
+		Name string
+		When Time[UTC]
+	}
+
+	original := Event{
+		Name: "Meeting",
+		When: Date[UTC](2024, time.June, 15, 14, 30, 0, 0),
+	}
+
+	// Encode
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(original)
+	if err != nil {
+		t.Fatalf("Gob encode error = %v", err)
+	}
+
+	// Decode
+	var decoded Event
+	dec := gob.NewDecoder(&buf)
+	err = dec.Decode(&decoded)
+	if err != nil {
+		t.Fatalf("Gob decode error = %v", err)
+	}
+
+	// Compare
+	if decoded.Name != original.Name {
+		t.Errorf("Name = %s, want %s", decoded.Name, original.Name)
+	}
+	if !decoded.When.UTC().Equal(original.When.UTC()) {
+		t.Errorf("When = %v, want %v", decoded.When, original.When)
+	}
+}
+
+func TestGobAcrossTimezones(t *testing.T) {
+	// Encode UTC time
+	utcTime := Date[UTC](2024, time.January, 15, 12, 0, 0, 0)
+	data, err := utcTime.GobEncode()
+	if err != nil {
+		t.Fatalf("GobEncode() error = %v", err)
+	}
+
+	// Decode as EST time
+	var estTime Time[EST]
+	err = estTime.GobDecode(data)
+	if err != nil {
+		t.Fatalf("GobDecode() error = %v", err)
+	}
+
+	// Should represent the same moment
+	if !utcTime.UTC().Equal(estTime.UTC()) {
+		t.Errorf("Cross-timezone gob failed: UTC = %v, EST = %v", utcTime.UTC(), estTime.UTC())
+	}
+
+	// But display differently
+	if utcTime.Hour() == estTime.Hour() {
+		t.Error("UTC and EST times should display different hours")
+	}
+}
+
+func TestSerializationPreservesNanoseconds(t *testing.T) {
+	original := Date[UTC](2024, time.June, 15, 14, 30, 45, 123456789)
+
+	tests := []struct {
+		name string
+		test func() (Time[UTC], error)
+	}{
+		{
+			name: "JSON",
+			test: func() (Time[UTC], error) {
+				data, err := json.Marshal(original)
+				if err != nil {
+					return Time[UTC]{}, err
+				}
+				var decoded Time[UTC]
+				err = json.Unmarshal(data, &decoded)
+				return decoded, err
+			},
+		},
+		{
+			name: "Text",
+			test: func() (Time[UTC], error) {
+				data, err := original.MarshalText()
+				if err != nil {
+					return Time[UTC]{}, err
+				}
+				var decoded Time[UTC]
+				err = decoded.UnmarshalText(data)
+				return decoded, err
+			},
+		},
+		{
+			name: "Binary",
+			test: func() (Time[UTC], error) {
+				data, err := original.MarshalBinary()
+				if err != nil {
+					return Time[UTC]{}, err
+				}
+				var decoded Time[UTC]
+				err = decoded.UnmarshalBinary(data)
+				return decoded, err
+			},
+		},
+		{
+			name: "Gob",
+			test: func() (Time[UTC], error) {
+				data, err := original.GobEncode()
+				if err != nil {
+					return Time[UTC]{}, err
+				}
+				var decoded Time[UTC]
+				err = decoded.GobDecode(data)
+				return decoded, err
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			decoded, err := tt.test()
+			if err != nil {
+				t.Fatalf("Serialization error = %v", err)
+			}
+
+			if decoded.Nanosecond() != original.Nanosecond() {
+				t.Errorf("Nanosecond() = %d, want %d", decoded.Nanosecond(), original.Nanosecond())
+			}
+
+			if !decoded.Equal(original) {
+				t.Errorf("Equal() = false, want true")
+			}
+		})
 	}
 }
