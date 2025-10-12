@@ -684,3 +684,318 @@ func TestTruncate(t *testing.T) {
 func containsTimezone(s, tz string) bool {
 	return s != "" && (s[len(s)-3:] == tz || len(s) > 3 && s[len(s)-4:len(s)-1] == tz)
 }
+
+func TestAfter(t *testing.T) {
+	t1 := Date[UTC](2024, time.January, 15, 12, 0, 0, 0)
+	t2 := Date[UTC](2024, time.January, 15, 10, 0, 0, 0)
+	t3 := Date[UTC](2024, time.January, 15, 12, 0, 0, 0) // Same as t1
+
+	tests := []struct {
+		name     string
+		t        Time[UTC]
+		u        Time[UTC]
+		expected bool
+	}{
+		{
+			name:     "t is after u",
+			t:        t1,
+			u:        t2,
+			expected: true,
+		},
+		{
+			name:     "t is before u",
+			t:        t2,
+			u:        t1,
+			expected: false,
+		},
+		{
+			name:     "t equals u",
+			t:        t1,
+			u:        t3,
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.t.After(tt.u)
+			if result != tt.expected {
+				t.Errorf("After() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestAfterAcrossTimezones(t *testing.T) {
+	// Same moment in different timezones
+	estTime := Date[EST](2024, time.January, 15, 12, 0, 0, 0) // Noon EST
+	pstTime := Date[PST](2024, time.January, 15, 9, 0, 0, 0)  // 9 AM PST = Noon EST
+
+	// Same moment, neither is after the other
+	if estTime.After(pstTime) {
+		t.Error("Same moment: estTime.After(pstTime) should be false")
+	}
+
+	// Different moment - EST noon vs PST noon
+	pstNoon := Date[PST](2024, time.January, 15, 12, 0, 0, 0) // Noon PST (3 hours after noon EST)
+	if !pstNoon.After(estTime) {
+		t.Error("PST noon should be after EST noon")
+	}
+}
+
+func TestAfterWithTimeTime(t *testing.T) {
+	meridianTime := Date[UTC](2024, time.January, 15, 12, 0, 0, 0)
+	stdTimeBefore := time.Date(2024, time.January, 15, 10, 0, 0, 0, time.UTC)
+	stdTimeAfter := time.Date(2024, time.January, 15, 14, 0, 0, 0, time.UTC)
+
+	if !meridianTime.After(stdTimeBefore) {
+		t.Error("meridianTime should be after stdTimeBefore")
+	}
+
+	if meridianTime.After(stdTimeAfter) {
+		t.Error("meridianTime should not be after stdTimeAfter")
+	}
+}
+
+func TestBefore(t *testing.T) {
+	t1 := Date[UTC](2024, time.January, 15, 10, 0, 0, 0)
+	t2 := Date[UTC](2024, time.January, 15, 12, 0, 0, 0)
+	t3 := Date[UTC](2024, time.January, 15, 10, 0, 0, 0) // Same as t1
+
+	tests := []struct {
+		name     string
+		t        Time[UTC]
+		u        Time[UTC]
+		expected bool
+	}{
+		{
+			name:     "t is before u",
+			t:        t1,
+			u:        t2,
+			expected: true,
+		},
+		{
+			name:     "t is after u",
+			t:        t2,
+			u:        t1,
+			expected: false,
+		},
+		{
+			name:     "t equals u",
+			t:        t1,
+			u:        t3,
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.t.Before(tt.u)
+			if result != tt.expected {
+				t.Errorf("Before() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestBeforeAcrossTimezones(t *testing.T) {
+	// EST noon vs PST noon (EST is 3 hours ahead)
+	estNoon := Date[EST](2024, time.January, 15, 12, 0, 0, 0)
+	pstNoon := Date[PST](2024, time.January, 15, 12, 0, 0, 0)
+
+	// EST noon happens before PST noon (3 hours earlier)
+	if !estNoon.Before(pstNoon) {
+		t.Error("EST noon should be before PST noon")
+	}
+
+	if pstNoon.Before(estNoon) {
+		t.Error("PST noon should not be before EST noon")
+	}
+}
+
+func TestEqual(t *testing.T) {
+	t1 := Date[UTC](2024, time.January, 15, 12, 0, 0, 0)
+	t2 := Date[UTC](2024, time.January, 15, 12, 0, 0, 0) // Same as t1
+	t3 := Date[UTC](2024, time.January, 15, 12, 0, 1, 0) // 1 second later
+
+	tests := []struct {
+		name     string
+		t        Time[UTC]
+		u        Time[UTC]
+		expected bool
+	}{
+		{
+			name:     "equal times",
+			t:        t1,
+			u:        t2,
+			expected: true,
+		},
+		{
+			name:     "different times",
+			t:        t1,
+			u:        t3,
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.t.Equal(tt.u)
+			if result != tt.expected {
+				t.Errorf("Equal() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestEqualAcrossTimezones(t *testing.T) {
+	// Same moment in different timezones
+	estTime := Date[EST](2024, time.January, 15, 12, 0, 0, 0) // Noon EST
+	pstTime := Date[PST](2024, time.January, 15, 9, 0, 0, 0)  // 9 AM PST = Noon EST
+	utcTime := Date[UTC](2024, time.January, 15, 17, 0, 0, 0) // 5 PM UTC = Noon EST
+
+	// All represent the same moment
+	if !estTime.Equal(pstTime) {
+		t.Error("EST and PST times should be equal (same moment)")
+	}
+
+	if !estTime.Equal(utcTime) {
+		t.Error("EST and UTC times should be equal (same moment)")
+	}
+
+	if !pstTime.Equal(utcTime) {
+		t.Error("PST and UTC times should be equal (same moment)")
+	}
+}
+
+func TestEqualWithTimeTime(t *testing.T) {
+	meridianTime := Date[UTC](2024, time.January, 15, 12, 0, 0, 0)
+	stdTimeSame := time.Date(2024, time.January, 15, 12, 0, 0, 0, time.UTC)
+	stdTimeDifferent := time.Date(2024, time.January, 15, 12, 0, 1, 0, time.UTC)
+
+	if !meridianTime.Equal(stdTimeSame) {
+		t.Error("meridianTime should equal stdTimeSame")
+	}
+
+	if meridianTime.Equal(stdTimeDifferent) {
+		t.Error("meridianTime should not equal stdTimeDifferent")
+	}
+}
+
+func TestCompare(t *testing.T) {
+	t1 := Date[UTC](2024, time.January, 15, 10, 0, 0, 0)
+	t2 := Date[UTC](2024, time.January, 15, 12, 0, 0, 0)
+	t3 := Date[UTC](2024, time.January, 15, 10, 0, 0, 0) // Same as t1
+
+	tests := []struct {
+		name     string
+		t        Time[UTC]
+		u        Time[UTC]
+		expected int
+	}{
+		{
+			name:     "t before u returns -1",
+			t:        t1,
+			u:        t2,
+			expected: -1,
+		},
+		{
+			name:     "t after u returns 1",
+			t:        t2,
+			u:        t1,
+			expected: 1,
+		},
+		{
+			name:     "t equals u returns 0",
+			t:        t1,
+			u:        t3,
+			expected: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.t.Compare(tt.u)
+			if result != tt.expected {
+				t.Errorf("Compare() = %d, want %d", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestCompareAcrossTimezones(t *testing.T) {
+	estNoon := Date[EST](2024, time.January, 15, 12, 0, 0, 0)
+	pstNoon := Date[PST](2024, time.January, 15, 12, 0, 0, 0)
+	pst9am := Date[PST](2024, time.January, 15, 9, 0, 0, 0) // Same as EST noon
+
+	// EST noon is before PST noon
+	if estNoon.Compare(pstNoon) != -1 {
+		t.Error("estNoon.Compare(pstNoon) should return -1")
+	}
+
+	// PST noon is after EST noon
+	if pstNoon.Compare(estNoon) != 1 {
+		t.Error("pstNoon.Compare(estNoon) should return 1")
+	}
+
+	// EST noon equals PST 9am (same moment)
+	if estNoon.Compare(pst9am) != 0 {
+		t.Error("estNoon.Compare(pst9am) should return 0")
+	}
+}
+
+func TestCompareWithTimeTime(t *testing.T) {
+	meridianTime := Date[UTC](2024, time.January, 15, 12, 0, 0, 0)
+	stdTimeBefore := time.Date(2024, time.January, 15, 10, 0, 0, 0, time.UTC)
+	stdTimeSame := time.Date(2024, time.January, 15, 12, 0, 0, 0, time.UTC)
+	stdTimeAfter := time.Date(2024, time.January, 15, 14, 0, 0, 0, time.UTC)
+
+	if meridianTime.Compare(stdTimeBefore) != 1 {
+		t.Error("meridianTime.Compare(stdTimeBefore) should return 1")
+	}
+
+	if meridianTime.Compare(stdTimeSame) != 0 {
+		t.Error("meridianTime.Compare(stdTimeSame) should return 0")
+	}
+
+	if meridianTime.Compare(stdTimeAfter) != -1 {
+		t.Error("meridianTime.Compare(stdTimeAfter) should return -1")
+	}
+}
+
+func TestIsZero(t *testing.T) {
+	zeroTime := Time[UTC]{}
+	nonZeroTime := Date[UTC](2024, time.January, 15, 12, 0, 0, 0)
+	explicitZero := Date[UTC](1, time.January, 1, 0, 0, 0, 0)
+
+	if !zeroTime.IsZero() {
+		t.Error("Zero value Time should return IsZero() = true")
+	}
+
+	if nonZeroTime.IsZero() {
+		t.Error("Non-zero Time should return IsZero() = false")
+	}
+
+	if !explicitZero.IsZero() {
+		t.Error("Explicit zero time (year 1) should return IsZero() = true")
+	}
+}
+
+func TestIsZeroAcrossTimezones(t *testing.T) {
+	// Zero values in different timezone types
+	zeroUTC := Time[UTC]{}
+	zeroEST := Time[EST]{}
+	zeroPST := Time[PST]{}
+
+	if !zeroUTC.IsZero() {
+		t.Error("Zero UTC time should return IsZero() = true")
+	}
+
+	if !zeroEST.IsZero() {
+		t.Error("Zero EST time should return IsZero() = true")
+	}
+
+	if !zeroPST.IsZero() {
+		t.Error("Zero PST time should return IsZero() = true")
+	}
+}
