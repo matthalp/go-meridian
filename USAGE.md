@@ -4,29 +4,108 @@
 
 ### Installing the Package
 
-Once published to GitHub, users can install your package with:
+Install the meridian package and timezone subpackages:
 
 ```bash
 go get github.com/matthalp/go-meridian
 ```
 
-### Using in Their Code
+### Basic Usage - Timezone Packages
+
+The easiest way to use Meridian is through the timezone-specific packages:
 
 ```go
 package main
 
 import (
     "fmt"
-    "github.com/matthalp/go-meridian"
+    "time"
+    
+    "github.com/matthalp/go-meridian/est"
+    "github.com/matthalp/go-meridian/pst"
+    "github.com/matthalp/go-meridian/utc"
 )
 
 func main() {
-    // Use any exported function from the package
-    greeting := meridian.Greet("Developer")
-    fmt.Println(greeting)
+    // Get current time in different timezones
+    utcNow := utc.Now()
+    estNow := est.Now()
+    pstNow := pst.Now()
     
-    // Access exported constants
-    fmt.Printf("Using meridian version: %s\n", meridian.Version)
+    fmt.Printf("UTC: %s\n", utcNow.Format(time.RFC3339))
+    fmt.Printf("EST: %s\n", estNow.Format(time.RFC3339))
+    fmt.Printf("PST: %s\n", pstNow.Format(time.RFC3339))
+    
+    // Create a specific date/time
+    meeting := est.Date(2024, time.December, 25, 10, 30, 0, 0)
+    fmt.Printf("Meeting: %s\n", meeting.Format(time.Kitchen))
+}
+```
+
+### Type-Safe Function Signatures
+
+Use timezone-specific types in your function signatures for compiler-enforced correctness:
+
+```go
+package main
+
+import (
+    "database/sql"
+    "github.com/matthalp/go-meridian/utc"
+    "github.com/matthalp/go-meridian/est"
+)
+
+// Function only accepts UTC times
+func storeInDatabase(db *sql.DB, t utc.Time) error {
+    // You know for certain this is UTC
+    return db.Exec("INSERT INTO events (timestamp) VALUES (?)", 
+                   t.Format(time.RFC3339))
+}
+
+// Function only accepts EST times for display
+func displayToUser(t est.Time) string {
+    return t.Format("3:04 PM MST")
+}
+
+func main() {
+    // ✅ This compiles
+    storeInDatabase(db, utc.Now())
+    
+    // ❌ This won't compile - type safety!
+    // storeInDatabase(db, est.Now())
+    
+    // ✅ This compiles
+    displayToUser(est.Now())
+    
+    // ❌ This won't compile
+    // displayToUser(utc.Now())
+}
+```
+
+### Advanced Usage - Generic API
+
+For custom timezones or advanced usage, use the generic API:
+
+```go
+package main
+
+import (
+    "time"
+    "github.com/matthalp/go-meridian"
+)
+
+// Define a custom timezone
+type JST struct{}
+
+func (JST) Location() *time.Location {
+    loc, _ := time.LoadLocation("Asia/Tokyo")
+    return loc
+}
+
+func main() {
+    // Use the generic API with your custom timezone
+    now := meridian.Now[JST]()
+    meeting := meridian.Date[JST](2024, time.June, 15, 14, 30, 0, 0)
 }
 ```
 
@@ -36,11 +115,20 @@ func main() {
 
 ```
 go-meridian/
-├── meridian.go          # Main package code with exported functions
-├── meridian_test.go     # Unit tests
+├── meridian.go          # Core generic types and functions
+├── meridian_test.go     # Core package tests
 ├── example_test.go      # Testable examples (appear in docs)
 ├── doc.go               # Package-level documentation
 ├── cmd/example/         # Example program using the package
+├── utc/                 # UTC timezone package
+│   ├── utc.go
+│   └── utc_test.go
+├── est/                 # EST timezone package
+│   ├── est.go
+│   └── est_test.go
+├── pst/                 # PST timezone package
+│   ├── pst.go
+│   └── pst_test.go
 └── ...                  # CI/CD and config files
 ```
 
@@ -81,38 +169,50 @@ go-meridian/
    git push origin main --tags
    ```
 
-### Adding New Functionality
+### Adding New Timezone Packages
 
-To add a new function that others can use:
+To add a new timezone package (e.g., `jst` for Japan Standard Time):
 
-1. Add the function to `meridian.go`:
+1. Create a new directory `jst/` with `jst.go`:
    ```go
-   // NewFunction does something useful.
-   // Provide a clear description of what it does.
-   func NewFunction(param string) string {
-       // Implementation
-       return result
-   }
-   ```
-
-2. Add tests in `meridian_test.go`:
-   ```go
-   func TestNewFunction(t *testing.T) {
-       result := NewFunction("test")
-       if result != expected {
-           t.Errorf("got %v, want %v", result, expected)
+   package jst
+   
+   import (
+       "fmt"
+       "time"
+       "github.com/matthalp/go-meridian"
+   )
+   
+   var location = mustLoadLocation("Asia/Tokyo")
+   
+   func mustLoadLocation(name string) *time.Location {
+       loc, err := time.LoadLocation(name)
+       if err != nil {
+           panic(fmt.Sprintf("failed to load timezone %s: %v", name, err))
        }
+       return loc
+   }
+   
+   type Timezone struct{}
+   
+   func (Timezone) Location() *time.Location {
+       return location
+   }
+   
+   type Time = meridian.Time[Timezone]
+   
+   func Now() Time {
+       return meridian.Now[Timezone]()
+   }
+   
+   func Date(year int, month time.Month, day, hour, minute, sec, nsec int) Time {
+       return meridian.Date[Timezone](year, month, day, hour, minute, sec, nsec)
    }
    ```
 
-3. Add example in `example_test.go`:
-   ```go
-   func ExampleNewFunction() {
-       result := meridian.NewFunction("input")
-       fmt.Println(result)
-       // Output: expected output
-   }
-   ```
+2. Add tests in `jst/jst_test.go` following the pattern in `utc/utc_test.go`
+
+3. Update documentation to include the new timezone package
 
 ### Publishing Updates
 

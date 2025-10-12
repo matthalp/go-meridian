@@ -16,9 +16,10 @@ This is a **distributable library** intended for consumption by other Go project
 - The compiler prevents accidental timezone mixing or loss
 
 ### 2. Per-Timezone Packages
-- Each timezone lives in its own package: `est`, `pst`, `utc`, `jst`, etc.
+- Each timezone lives in its own package: `est`, `pst`, `utc`, etc.
 - Timezone packages provide helper functions: `est.Now()`, `pst.Date(...)`, etc.
-- Type signatures read naturally: `meridian.Time[est.EST]`
+- Type aliases enable clean signatures: `utc.Time`, `est.Time`, `pst.Time`
+- Package name conveys timezone, type is always `Timezone`
 
 ### 3. Explicit Conversions
 - Timezone conversions must be explicit: `est.Convert(pacificTime)`
@@ -39,9 +40,17 @@ This is a **distributable library** intended for consumption by other Go project
 ├── example_test.go          # Testable examples (appear in godoc)
 ├── doc.go                   # Package-level documentation
 ├── cmd/example/main.go      # Example usage program
+├── est/                     # Eastern Time timezone package
+│   ├── est.go
+│   └── est_test.go
+├── pst/                     # Pacific Time timezone package
+│   ├── pst.go
+│   └── pst_test.go
+├── utc/                     # UTC timezone package
+│   ├── utc.go
+│   └── utc_test.go
 ├── .golangci.yml            # Linter configuration
-├── Makefile                 # Development commands
-└── [timezone packages]      # est/, pst/, utc/, etc. (future)
+└── Makefile                 # Development commands
 ```
 
 ## Development Commands
@@ -292,36 +301,60 @@ All PRs must pass these checks. If CI fails, the PR cannot merge.
 
 ## When Adding New Timezones
 
-Each timezone package should follow this pattern:
+Each timezone package must follow this exact pattern for consistency:
 
 ```go
-// Package est provides Eastern Time timezone support for meridian.
-package est
+// Package jst provides Japan Standard Time timezone support for meridian.
+package jst
 
 import (
+    "fmt"
     "time"
+    
     "github.com/matthalp/go-meridian"
 )
 
-// EST represents the Eastern Standard Time timezone.
-type EST struct{}
+// location is the IANA timezone location, loaded once at package initialization.
+var location = mustLoadLocation("Asia/Tokyo")
 
-// Location returns the IANA timezone location for EST.
-func (EST) Location() *time.Location {
-    loc, _ := time.LoadLocation("America/New_York")
+// mustLoadLocation loads a timezone location or panics if it fails.
+// This should only fail if the system's timezone database is corrupted or missing.
+func mustLoadLocation(name string) *time.Location {
+    loc, err := time.LoadLocation(name)
+    if err != nil {
+        panic(fmt.Sprintf("failed to load timezone %s: %v", name, err))
+    }
     return loc
 }
 
-// Now returns the current time in EST.
-func Now() meridian.Time[EST] {
-    return meridian.Now[EST]()
+// Timezone represents the Japan Standard Time timezone.
+type Timezone struct{}
+
+// Location returns the IANA timezone location.
+func (Timezone) Location() *time.Location {
+    return location
 }
 
-// Date creates a new time in EST.
-func Date(year int, month time.Month, day, hour, min, sec, nsec int) meridian.Time[EST] {
-    return meridian.Date[EST](year, month, day, hour, min, sec, nsec)
+// Time is a convenience alias for meridian.Time[Timezone].
+type Time = meridian.Time[Timezone]
+
+// Now returns the current time in this timezone.
+func Now() Time {
+    return meridian.Now[Timezone]()
+}
+
+// Date creates a new time in this timezone with the specified date and time components.
+func Date(year int, month time.Month, day, hour, minute, sec, nsec int) Time {
+    return meridian.Date[Timezone](year, month, day, hour, minute, sec, nsec)
 }
 ```
+
+**Key points:**
+- Type is always named `Timezone` (package name conveys the actual timezone)
+- `Time` type alias enables clean API: `jst.Time` in function signatures
+- Location loaded once at init in a package variable for efficiency
+- `mustLoadLocation` helper panics early if timezone database is missing
+- Consistent comments and structure across all timezone packages
 
 ## Questions to Ask Before Committing
 

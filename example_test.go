@@ -4,19 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/matthalp/go-meridian"
+	"github.com/matthalp/go-meridian/utc"
 )
-
-// UTC timezone for examples.
-type UTC struct{}
-
-func (UTC) Location() *time.Location {
-	return time.UTC
-}
 
 func ExampleNow() {
 	// Get the current time in UTC
-	now := meridian.Now[UTC]()
+	now := utc.Now()
 
 	// Format it
 	fmt.Println("Current time format:", now.Format("2006-01-02"))
@@ -25,7 +18,7 @@ func ExampleNow() {
 
 func ExampleDate() {
 	// Create a specific time in UTC
-	t := meridian.Date[UTC](2024, time.January, 15, 14, 30, 0, 0)
+	t := utc.Date(2024, time.January, 15, 14, 30, 0, 0)
 
 	// Format the time
 	fmt.Println(t.Format("2006-01-02 15:04:05"))
@@ -34,7 +27,7 @@ func ExampleDate() {
 
 func ExampleTime_Format() {
 	// Create a specific time in UTC
-	t := meridian.Date[UTC](2024, time.June, 15, 9, 30, 0, 0)
+	t := utc.Date(2024, time.June, 15, 9, 30, 0, 0)
 
 	// Format the time in different layouts
 	fmt.Println(t.Format(time.RFC3339))

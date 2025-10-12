@@ -4,16 +4,20 @@
 [![codecov](https://codecov.io/gh/matthalp/go-meridian/branch/main/graph/badge.svg)](https://codecov.io/gh/matthalp/go-meridian)
 [![Go Report Card](https://goreportcard.com/badge/github.com/matthalp/go-meridian)](https://goreportcard.com/report/github.com/matthalp/go-meridian)
 
-A Go 1.20 package/library with comprehensive CI/CD pipeline.
+**Type-safe timezone handling for Go using generics.**
+
+Meridian solves a fundamental problem: timezone information in `time.Time` is data, not type, and can be lost without the compiler noticing. With Meridian, timezone information is encoded directly into the type system, making wrong timezone handling impossible to compile.
 
 ## Features
 
+- ✅ **Type-safe timezones**: `utc.Time` and `est.Time` are different types
+- ✅ **Compiler-enforced correctness**: Prevents accidental timezone mixing
+- ✅ **Clean, ergonomic API**: `utc.Now()`, `est.Date(...)`, `pst.Time`
+- ✅ **Built-in timezone packages**: UTC, EST, PST included
+- ✅ **Extensible**: Easy to add custom timezone packages
 - ✅ Full GitHub Actions CI/CD pipeline
 - ✅ Automated testing with coverage reports
-- ✅ Code linting with golangci-lint
 - ✅ Race condition detection
-- ✅ Coverage reports uploaded to Codecov
-- ✅ Importable as a Go module
 
 ## Installation
 
@@ -23,27 +27,67 @@ Install the package in your Go project:
 go get github.com/matthalp/go-meridian
 ```
 
-## Usage
+## Quick Start
 
-Import and use the package in your code:
+Import and use timezone-specific packages:
 
 ```go
 package main
 
 import (
     "fmt"
-    "github.com/matthalp/go-meridian"
+    "time"
+    
+    "github.com/matthalp/go-meridian/est"
+    "github.com/matthalp/go-meridian/utc"
 )
 
 func main() {
-    // Use the Greet function
-    greeting := meridian.Greet("World")
-    fmt.Println(greeting) // Output: Hello, World!
+    // Get current time in different timezones
+    now := utc.Now()
+    fmt.Println(now.Format(time.RFC3339))
+    
+    // Create a specific date/time
+    meeting := est.Date(2024, time.December, 25, 10, 30, 0, 0)
+    fmt.Println(meeting.Format(time.Kitchen))
+    
+    // Type-safe function signatures
+    storeInDatabase(utc.Now())  // ✅ Compiles
+    // storeInDatabase(est.Now()) // ❌ Won't compile!
+}
 
-    // Check the version
-    fmt.Printf("Version: %s\n", meridian.Version)
+// Functions can require specific timezones
+func storeInDatabase(t utc.Time) {
+    // Always receives UTC time, guaranteed by the compiler
 }
 ```
+
+## Why Meridian?
+
+**Problem**: Standard Go `time.Time` loses timezone information easily:
+```go
+t := time.Now().UTC()
+// Later in code...
+formatted := t.Format(time.Kitchen) // What timezone is this? 🤷
+```
+
+**Solution**: Meridian encodes timezone in the type:
+```go
+t := utc.Now()
+// Later in code...
+formatted := t.Format(time.Kitchen) // Definitely UTC! ✅
+```
+
+## Available Timezone Packages
+
+- `github.com/matthalp/go-meridian/utc` - Coordinated Universal Time
+- `github.com/matthalp/go-meridian/est` - Eastern Standard Time (America/New_York)
+- `github.com/matthalp/go-meridian/pst` - Pacific Standard Time (America/Los_Angeles)
+
+Each package provides:
+- `Now()` - Get current time in that timezone
+- `Date()` - Create a specific date/time
+- `Time` - Type alias for clean function signatures
 
 ### Running the Example
 
@@ -98,12 +142,21 @@ Coverage reports are automatically uploaded to Codecov for tracking test coverag
 ├── cmd/
 │   └── example/
 │       └── main.go         # Example usage program
+├── est/                    # Eastern Time timezone package
+│   ├── est.go
+│   └── est_test.go
+├── pst/                    # Pacific Time timezone package
+│   ├── pst.go
+│   └── pst_test.go
+├── utc/                    # UTC timezone package
+│   ├── utc.go
+│   └── utc_test.go
 ├── .golangci.yml           # Linter configuration
 ├── doc.go                  # Package documentation
 ├── example_test.go         # Testable examples
 ├── go.mod                  # Go module file
-├── meridian.go             # Main package code
-├── meridian_test.go        # Package tests
+├── meridian.go             # Core generic types and functions
+├── meridian_test.go        # Core package tests
 ├── Makefile                # Development tasks
 └── README.md               # This file
 ```
