@@ -60,6 +60,38 @@ func (t Time[TZ]) UTC() time.Time {
 	return t.utcTime
 }
 
+// Time Arithmetic & Manipulation
+
+// Add returns the time t+d, preserving the timezone type.
+func (t Time[TZ]) Add(d time.Duration) Time[TZ] {
+	return Time[TZ]{utcTime: t.utcTime.Add(d)}
+}
+
+// AddDate returns the time corresponding to adding the given number of years,
+// months, and days to t, preserving the timezone type.
+func (t Time[TZ]) AddDate(years, months, days int) Time[TZ] {
+	return Time[TZ]{utcTime: t.utcTime.AddDate(years, months, days)}
+}
+
+// Sub returns the duration t-u. If the result exceeds the maximum (or minimum)
+// value that can be stored in a Duration, the maximum (or minimum) duration
+// will be returned. The parameter u can be any Moment (time.Time or Time[TZ]).
+func (t Time[TZ]) Sub(u Moment) time.Duration {
+	return t.utcTime.Sub(u.UTC())
+}
+
+// Round returns the result of rounding t to the nearest multiple of d (since the zero time),
+// preserving the timezone type.
+func (t Time[TZ]) Round(d time.Duration) Time[TZ] {
+	return Time[TZ]{utcTime: t.utcTime.Round(d)}
+}
+
+// Truncate returns the result of rounding t down to a multiple of d (since the zero time),
+// preserving the timezone type.
+func (t Time[TZ]) Truncate(d time.Duration) Time[TZ] {
+	return Time[TZ]{utcTime: t.utcTime.Truncate(d)}
+}
+
 // nativeTimeInLocation returns the native time in the location of the timezone.
 func (t Time[TZ]) nativeTimeInLocation() time.Time {
 	// This is a bit of a hack to get the timezone's location.
