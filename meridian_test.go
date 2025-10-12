@@ -294,3 +294,66 @@ func TestEdgeCases(t *testing.T) {
 		}
 	})
 }
+
+func TestTimeUTC(t *testing.T) {
+	// Test that UTC() returns the internal UTC time
+	meridianTime := Date[UTC](2024, time.January, 15, 12, 0, 0, 0)
+	stdTime := meridianTime.UTC()
+
+	expected := time.Date(2024, time.January, 15, 12, 0, 0, 0, time.UTC)
+	if !stdTime.Equal(expected) {
+		t.Errorf("UTC() = %v, want %v", stdTime, expected)
+	}
+
+	// Test with EST time - should return the UTC equivalent
+	estTime := Date[EST](2024, time.January, 15, 12, 0, 0, 0)
+	utcFromEST := estTime.UTC()
+
+	// 12:00 EST = 17:00 UTC in winter
+	expectedUTC := time.Date(2024, time.January, 15, 17, 0, 0, 0, time.UTC)
+	if !utcFromEST.Equal(expectedUTC) {
+		t.Errorf("EST time UTC() = %v, want %v", utcFromEST, expectedUTC)
+	}
+}
+
+func TestTimezoneConversion(t *testing.T) {
+	// Create time in EST (noon)
+	estTime := Date[EST](2024, time.January, 15, 12, 0, 0, 0)
+
+	// Create time in PST (same clock time, different timezone)
+	pstTime := Date[PST](2024, time.January, 15, 12, 0, 0, 0)
+
+	// These should NOT be the same moment in time
+	if estTime.UTC().Equal(pstTime.UTC()) {
+		t.Error("EST noon and PST noon should be different moments")
+	}
+
+	// EST is 3 hours ahead of PST, so EST noon happens 3 hours before PST noon
+	diff := pstTime.UTC().Sub(estTime.UTC())
+	expectedDiff := 3 * time.Hour
+	if diff != expectedDiff {
+		t.Errorf("Time difference between PST and EST = %v, want %v", diff, expectedDiff)
+	}
+}
+
+func TestMomentInterface(t *testing.T) {
+	// Test that meridian.Time implements Moment
+	var _ Moment = Date[UTC](2024, time.January, 1, 0, 0, 0, 0)
+
+	// Test that time.Time implements Moment (it has UTC() method)
+	stdTime := time.Date(2024, time.January, 1, 12, 0, 0, 0, time.UTC)
+	var _ Moment = stdTime
+
+	// Verify they can be used interchangeably
+	moments := []Moment{
+		Date[UTC](2024, time.January, 1, 12, 0, 0, 0),
+		time.Date(2024, time.January, 1, 12, 0, 0, 0, time.UTC),
+	}
+
+	for i, m := range moments {
+		utc := m.UTC()
+		if utc.IsZero() {
+			t.Errorf("Moment %d returned zero time", i)
+		}
+	}
+}

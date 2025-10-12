@@ -3,6 +3,9 @@ package utc
 import (
 	"testing"
 	"time"
+
+	"github.com/matthalp/go-meridian/est"
+	"github.com/matthalp/go-meridian/pst"
 )
 
 func TestUTCLocation(t *testing.T) {
@@ -75,4 +78,82 @@ func TestDate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestConvert(t *testing.T) {
+	t.Run("from time.Time", func(t *testing.T) {
+		// Test converting from standard time.Time
+		stdTime := time.Date(2024, time.January, 15, 12, 0, 0, 0, time.UTC)
+		utcTime := Convert(stdTime)
+
+		// Verify the conversion
+		if !utcTime.UTC().Equal(stdTime) {
+			t.Errorf("Convert(time.Time) = %v, want %v", utcTime.UTC(), stdTime)
+		}
+
+		// Verify formatting shows UTC
+		result := utcTime.Format("15:04 MST")
+		if result != "12:00 UTC" {
+			t.Errorf("Formatted time = %q, want %q", result, "12:00 UTC")
+		}
+	})
+
+	t.Run("from EST", func(t *testing.T) {
+		// Create noon EST
+		estTime := est.Date(2024, time.January, 15, 12, 0, 0, 0)
+
+		// Convert to UTC
+		utcTime := Convert(estTime)
+
+		// 12:00 EST = 17:00 UTC in winter
+		expected := time.Date(2024, time.January, 15, 17, 0, 0, 0, time.UTC)
+		if !utcTime.UTC().Equal(expected) {
+			t.Errorf("Convert(EST) = %v, want %v", utcTime.UTC(), expected)
+		}
+
+		// Verify it displays as UTC
+		result := utcTime.Format("15:04 MST")
+		if result != "17:00 UTC" {
+			t.Errorf("Formatted UTC time = %q, want %q", result, "17:00 UTC")
+		}
+	})
+
+	t.Run("from PST", func(t *testing.T) {
+		// Create noon PST
+		pstTime := pst.Date(2024, time.January, 15, 12, 0, 0, 0)
+
+		// Convert to UTC
+		utcTime := Convert(pstTime)
+
+		// 12:00 PST = 20:00 UTC in winter
+		expected := time.Date(2024, time.January, 15, 20, 0, 0, 0, time.UTC)
+		if !utcTime.UTC().Equal(expected) {
+			t.Errorf("Convert(PST) = %v, want %v", utcTime.UTC(), expected)
+		}
+
+		// Verify it displays as UTC
+		result := utcTime.Format("15:04 MST")
+		if result != "20:00 UTC" {
+			t.Errorf("Formatted UTC time = %q, want %q", result, "20:00 UTC")
+		}
+	})
+
+	t.Run("preserves moment in time", func(t *testing.T) {
+		// All these should represent the same moment
+		estTime := est.Date(2024, time.January, 15, 12, 0, 0, 0)
+		pstTime := pst.Date(2024, time.January, 15, 9, 0, 0, 0) // 3 hours earlier
+		utcTime := Date(2024, time.January, 15, 17, 0, 0, 0)    // EST + 5 hours
+
+		// Convert all to UTC
+		utcFromEST := Convert(estTime)
+		utcFromPST := Convert(pstTime)
+
+		// All should be equal
+		if !utcFromEST.UTC().Equal(utcTime.UTC()) {
+			t.Error("EST conversion doesn't match expected UTC time")
+		}
+		if !utcFromPST.UTC().Equal(utcTime.UTC()) {
+			t.Error("PST conversion doesn't match expected UTC time")
+		}
+	})
 }

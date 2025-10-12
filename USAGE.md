@@ -82,6 +82,92 @@ func main() {
 }
 ```
 
+### Converting Between Timezones
+
+Meridian provides `Convert()` functions in each timezone package to convert between timezones:
+
+```go
+package main
+
+import (
+    "fmt"
+    "time"
+    
+    "github.com/matthalp/go-meridian/est"
+    "github.com/matthalp/go-meridian/pst"
+    "github.com/matthalp/go-meridian/utc"
+)
+
+func main() {
+    // Create a time in EST
+    meeting := est.Date(2024, time.December, 25, 10, 30, 0, 0)
+    
+    // Convert to other timezones
+    utcMeeting := utc.Convert(meeting)
+    pstMeeting := pst.Convert(meeting)
+    
+    fmt.Printf("EST: %s\n", meeting.Format(time.Kitchen))    // 10:30AM
+    fmt.Printf("UTC: %s\n", utcMeeting.Format(time.Kitchen)) // 3:30PM
+    fmt.Printf("PST: %s\n", pstMeeting.Format(time.Kitchen)) // 7:30AM
+    
+    // All represent the same moment in time
+    fmt.Println(meeting.UTC().Equal(utcMeeting.UTC()))  // true
+    fmt.Println(meeting.UTC().Equal(pstMeeting.UTC()))  // true
+}
+```
+
+### Converting from time.Time
+
+The `Moment` interface allows seamless conversion from standard `time.Time`:
+
+```go
+package main
+
+import (
+    "time"
+    "github.com/matthalp/go-meridian/utc"
+    "github.com/matthalp/go-meridian/est"
+)
+
+func processStandardTime(stdTime time.Time) {
+    // Convert to type-safe timezone types
+    utcTime := utc.Convert(stdTime)
+    estTime := est.Convert(stdTime)
+    
+    // Now you have type-safe times for your functions
+    storeInDatabase(utcTime)     // Function requires utc.Time
+    displayToUser(estTime)       // Function requires est.Time
+}
+
+func storeInDatabase(t utc.Time) { /* ... */ }
+func displayToUser(t est.Time) { /* ... */ }
+```
+
+### The Moment Interface
+
+Both `time.Time` and `meridian.Time[TZ]` implement the `Moment` interface:
+
+```go
+type Moment interface {
+    UTC() time.Time
+}
+```
+
+This allows functions to accept times from any source:
+
+```go
+func logEvent(m meridian.Moment, event string) {
+    // Works with time.Time or any meridian.Time[TZ]
+    utcTime := m.UTC()
+    fmt.Printf("[%s] %s\n", utcTime.Format(time.RFC3339), event)
+}
+
+// Can be called with either
+logEvent(time.Now(), "started")
+logEvent(utc.Now(), "processing")
+logEvent(est.Now(), "completed")
+```
+
 ### Advanced Usage - Generic API
 
 For custom timezones or advanced usage, use the generic API:

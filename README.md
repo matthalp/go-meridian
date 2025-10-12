@@ -87,7 +87,28 @@ formatted := t.Format(time.Kitchen) // Definitely UTC! ✅
 Each package provides:
 - `Now()` - Get current time in that timezone
 - `Date()` - Create a specific date/time
+- `Convert()` - Convert any time to that timezone
 - `Time` - Type alias for clean function signatures
+
+## Converting Between Timezones
+
+Meridian provides seamless timezone conversion while preserving type safety:
+
+```go
+// Convert between timezone types
+estTime := est.Date(2024, time.December, 25, 10, 30, 0, 0)
+utcTime := utc.Convert(estTime)  // Same moment, displayed as UTC
+pstTime := pst.Convert(estTime)  // Same moment, displayed as PST
+
+// Convert from standard time.Time
+stdTime := time.Now()
+typedTime := utc.Convert(stdTime)  // Now type-safe!
+
+// All conversions preserve the moment in time
+fmt.Println(estTime.UTC().Equal(utcTime.UTC()))  // true
+```
+
+The `Moment` interface allows both `time.Time` and `meridian.Time[TZ]` to be used interchangeably for conversions, providing flexibility while maintaining type safety where it matters.
 
 ### Running the Example
 
