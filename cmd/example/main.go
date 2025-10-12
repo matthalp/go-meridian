@@ -1,3 +1,4 @@
+// Package main provides an example usage of the meridian package.
 package main
 
 import (
