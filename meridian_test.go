@@ -357,3 +357,330 @@ func TestMomentInterface(t *testing.T) {
 		}
 	}
 }
+
+func TestAdd(t *testing.T) {
+	tests := []struct {
+		name     string
+		start    Time[UTC]
+		duration time.Duration
+		expected time.Time
+	}{
+		{
+			name:     "add 2 hours",
+			start:    Date[UTC](2024, time.January, 15, 10, 0, 0, 0),
+			duration: 2 * time.Hour,
+			expected: time.Date(2024, time.January, 15, 12, 0, 0, 0, time.UTC),
+		},
+		{
+			name:     "add 30 minutes",
+			start:    Date[UTC](2024, time.January, 15, 10, 30, 0, 0),
+			duration: 30 * time.Minute,
+			expected: time.Date(2024, time.January, 15, 11, 0, 0, 0, time.UTC),
+		},
+		{
+			name:     "add negative duration",
+			start:    Date[UTC](2024, time.January, 15, 10, 0, 0, 0),
+			duration: -1 * time.Hour,
+			expected: time.Date(2024, time.January, 15, 9, 0, 0, 0, time.UTC),
+		},
+		{
+			name:     "add across day boundary",
+			start:    Date[UTC](2024, time.January, 15, 23, 30, 0, 0),
+			duration: 1 * time.Hour,
+			expected: time.Date(2024, time.January, 16, 0, 30, 0, 0, time.UTC),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.start.Add(tt.duration)
+			if !result.UTC().Equal(tt.expected) {
+				t.Errorf("Add() = %v, want %v", result.UTC(), tt.expected)
+			}
+		})
+	}
+}
+
+func TestAddPreservesTimezoneType(t *testing.T) {
+	// Test with EST
+	estTime := Date[EST](2024, time.January, 15, 10, 0, 0, 0)
+	result := estTime.Add(2 * time.Hour)
+
+	// Verify the result is still EST by formatting
+	formatted := result.Format("15:04 MST")
+	if !containsTimezone(formatted, "EST") {
+		t.Errorf("Add() did not preserve EST timezone: %s", formatted)
+	}
+
+	// Test with PST
+	pstTime := Date[PST](2024, time.January, 15, 10, 0, 0, 0)
+	resultPST := pstTime.Add(2 * time.Hour)
+
+	formattedPST := resultPST.Format("15:04 MST")
+	if !containsTimezone(formattedPST, "PST") {
+		t.Errorf("Add() did not preserve PST timezone: %s", formattedPST)
+	}
+}
+
+func TestAddDate(t *testing.T) {
+	tests := []struct {
+		name     string
+		start    Time[UTC]
+		years    int
+		months   int
+		days     int
+		expected time.Time
+	}{
+		{
+			name:     "add 1 year",
+			start:    Date[UTC](2024, time.January, 15, 10, 0, 0, 0),
+			years:    1,
+			months:   0,
+			days:     0,
+			expected: time.Date(2025, time.January, 15, 10, 0, 0, 0, time.UTC),
+		},
+		{
+			name:     "add 3 months",
+			start:    Date[UTC](2024, time.January, 15, 10, 0, 0, 0),
+			years:    0,
+			months:   3,
+			days:     0,
+			expected: time.Date(2024, time.April, 15, 10, 0, 0, 0, time.UTC),
+		},
+		{
+			name:     "add 10 days",
+			start:    Date[UTC](2024, time.January, 15, 10, 0, 0, 0),
+			years:    0,
+			months:   0,
+			days:     10,
+			expected: time.Date(2024, time.January, 25, 10, 0, 0, 0, time.UTC),
+		},
+		{
+			name:     "add negative months",
+			start:    Date[UTC](2024, time.March, 15, 10, 0, 0, 0),
+			years:    0,
+			months:   -1,
+			days:     0,
+			expected: time.Date(2024, time.February, 15, 10, 0, 0, 0, time.UTC),
+		},
+		{
+			name:     "add across year boundary",
+			start:    Date[UTC](2024, time.November, 15, 10, 0, 0, 0),
+			years:    0,
+			months:   3,
+			days:     0,
+			expected: time.Date(2025, time.February, 15, 10, 0, 0, 0, time.UTC),
+		},
+		{
+			name:     "leap year edge case",
+			start:    Date[UTC](2024, time.February, 29, 10, 0, 0, 0),
+			years:    1,
+			months:   0,
+			days:     0,
+			expected: time.Date(2025, time.March, 1, 10, 0, 0, 0, time.UTC),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.start.AddDate(tt.years, tt.months, tt.days)
+			if !result.UTC().Equal(tt.expected) {
+				t.Errorf("AddDate(%d, %d, %d) = %v, want %v",
+					tt.years, tt.months, tt.days, result.UTC(), tt.expected)
+			}
+		})
+	}
+}
+
+func TestSub(t *testing.T) {
+	tests := []struct {
+		name     string
+		t1       Time[UTC]
+		t2       Time[UTC]
+		expected time.Duration
+	}{
+		{
+			name:     "2 hours apart",
+			t1:       Date[UTC](2024, time.January, 15, 12, 0, 0, 0),
+			t2:       Date[UTC](2024, time.January, 15, 10, 0, 0, 0),
+			expected: 2 * time.Hour,
+		},
+		{
+			name:     "30 minutes apart",
+			t1:       Date[UTC](2024, time.January, 15, 10, 30, 0, 0),
+			t2:       Date[UTC](2024, time.January, 15, 10, 0, 0, 0),
+			expected: 30 * time.Minute,
+		},
+		{
+			name:     "negative duration",
+			t1:       Date[UTC](2024, time.January, 15, 10, 0, 0, 0),
+			t2:       Date[UTC](2024, time.January, 15, 12, 0, 0, 0),
+			expected: -2 * time.Hour,
+		},
+		{
+			name:     "same time",
+			t1:       Date[UTC](2024, time.January, 15, 10, 0, 0, 0),
+			t2:       Date[UTC](2024, time.January, 15, 10, 0, 0, 0),
+			expected: 0,
+		},
+		{
+			name:     "across days",
+			t1:       Date[UTC](2024, time.January, 16, 2, 0, 0, 0),
+			t2:       Date[UTC](2024, time.January, 15, 10, 0, 0, 0),
+			expected: 16 * time.Hour,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.t1.Sub(tt.t2)
+			if result != tt.expected {
+				t.Errorf("Sub() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestSubAcrossTimezones(t *testing.T) {
+	// Create same moment in time in different timezones
+	estTime := Date[EST](2024, time.January, 15, 12, 0, 0, 0) // Noon EST
+	pstTime := Date[PST](2024, time.January, 15, 9, 0, 0, 0)  // 9 AM PST = Noon EST
+
+	// They represent the same moment, so subtracting should give 0
+	// Now this works because Sub accepts Moment interface!
+	diff := estTime.Sub(pstTime)
+	if diff != 0 {
+		t.Errorf("Same moment in different timezones: estTime.Sub(pstTime) = %v, want 0", diff)
+	}
+
+	// Also test with different moments
+	estLater := Date[EST](2024, time.January, 15, 14, 0, 0, 0) // 2 PM EST
+	diff2 := estLater.Sub(estTime)
+	expected := 2 * time.Hour
+	if diff2 != expected {
+		t.Errorf("estLater.Sub(estTime) = %v, want %v", diff2, expected)
+	}
+}
+
+func TestSubWithTimeTime(t *testing.T) {
+	// Test that Sub works with standard time.Time
+	meridianTime := Date[UTC](2024, time.January, 15, 12, 0, 0, 0)
+	stdTime := time.Date(2024, time.January, 15, 10, 0, 0, 0, time.UTC)
+
+	// Subtract time.Time from meridian.Time
+	diff := meridianTime.Sub(stdTime)
+	expected := 2 * time.Hour
+	if diff != expected {
+		t.Errorf("meridianTime.Sub(stdTime) = %v, want %v", diff, expected)
+	}
+
+	// Test reverse (negative duration)
+	diff2 := meridianTime.Sub(time.Date(2024, time.January, 15, 14, 0, 0, 0, time.UTC))
+	expected2 := -2 * time.Hour
+	if diff2 != expected2 {
+		t.Errorf("meridianTime.Sub(laterStdTime) = %v, want %v", diff2, expected2)
+	}
+}
+
+func TestRound(t *testing.T) {
+	tests := []struct {
+		name     string
+		start    Time[UTC]
+		duration time.Duration
+		expected time.Time
+	}{
+		{
+			name:     "round to nearest hour (down)",
+			start:    Date[UTC](2024, time.January, 15, 10, 20, 0, 0),
+			duration: time.Hour,
+			expected: time.Date(2024, time.January, 15, 10, 0, 0, 0, time.UTC),
+		},
+		{
+			name:     "round to nearest hour (up)",
+			start:    Date[UTC](2024, time.January, 15, 10, 40, 0, 0),
+			duration: time.Hour,
+			expected: time.Date(2024, time.January, 15, 11, 0, 0, 0, time.UTC),
+		},
+		{
+			name:     "round to nearest 15 minutes",
+			start:    Date[UTC](2024, time.January, 15, 10, 37, 0, 0),
+			duration: 15 * time.Minute,
+			expected: time.Date(2024, time.January, 15, 10, 30, 0, 0, time.UTC),
+		},
+		{
+			name:     "round to nearest minute",
+			start:    Date[UTC](2024, time.January, 15, 10, 30, 35, 0),
+			duration: time.Minute,
+			expected: time.Date(2024, time.January, 15, 10, 31, 0, 0, time.UTC),
+		},
+		{
+			name:     "round exact time",
+			start:    Date[UTC](2024, time.January, 15, 10, 0, 0, 0),
+			duration: time.Hour,
+			expected: time.Date(2024, time.January, 15, 10, 0, 0, 0, time.UTC),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.start.Round(tt.duration)
+			if !result.UTC().Equal(tt.expected) {
+				t.Errorf("Round(%v) = %v, want %v", tt.duration, result.UTC(), tt.expected)
+			}
+		})
+	}
+}
+
+func TestTruncate(t *testing.T) {
+	tests := []struct {
+		name     string
+		start    Time[UTC]
+		duration time.Duration
+		expected time.Time
+	}{
+		{
+			name:     "truncate to hour",
+			start:    Date[UTC](2024, time.January, 15, 10, 45, 30, 0),
+			duration: time.Hour,
+			expected: time.Date(2024, time.January, 15, 10, 0, 0, 0, time.UTC),
+		},
+		{
+			name:     "truncate to 15 minutes",
+			start:    Date[UTC](2024, time.January, 15, 10, 37, 0, 0),
+			duration: 15 * time.Minute,
+			expected: time.Date(2024, time.January, 15, 10, 30, 0, 0, time.UTC),
+		},
+		{
+			name:     "truncate to minute",
+			start:    Date[UTC](2024, time.January, 15, 10, 30, 45, 123),
+			duration: time.Minute,
+			expected: time.Date(2024, time.January, 15, 10, 30, 0, 0, time.UTC),
+		},
+		{
+			name:     "truncate exact time",
+			start:    Date[UTC](2024, time.January, 15, 10, 0, 0, 0),
+			duration: time.Hour,
+			expected: time.Date(2024, time.January, 15, 10, 0, 0, 0, time.UTC),
+		},
+		{
+			name:     "truncate to second",
+			start:    Date[UTC](2024, time.January, 15, 10, 30, 45, 999999999),
+			duration: time.Second,
+			expected: time.Date(2024, time.January, 15, 10, 30, 45, 0, time.UTC),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.start.Truncate(tt.duration)
+			if !result.UTC().Equal(tt.expected) {
+				t.Errorf("Truncate(%v) = %v, want %v", tt.duration, result.UTC(), tt.expected)
+			}
+		})
+	}
+}
+
+// Helper function to check if a formatted time string contains a timezone.
+func containsTimezone(s, tz string) bool {
+	return s != "" && (s[len(s)-3:] == tz || len(s) > 3 && s[len(s)-4:len(s)-1] == tz)
+}
