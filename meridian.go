@@ -92,6 +92,39 @@ func (t Time[TZ]) Truncate(d time.Duration) Time[TZ] {
 	return Time[TZ]{utcTime: t.utcTime.Truncate(d)}
 }
 
+// Comparisons & Validation
+
+// After reports whether the time instant t is after u.
+// The parameter u can be any Moment (time.Time or Time[TZ]).
+func (t Time[TZ]) After(u Moment) bool {
+	return t.utcTime.After(u.UTC())
+}
+
+// Before reports whether the time instant t is before u.
+// The parameter u can be any Moment (time.Time or Time[TZ]).
+func (t Time[TZ]) Before(u Moment) bool {
+	return t.utcTime.Before(u.UTC())
+}
+
+// Equal reports whether t and u represent the same time instant.
+// The parameter u can be any Moment (time.Time or Time[TZ]).
+func (t Time[TZ]) Equal(u Moment) bool {
+	return t.utcTime.Equal(u.UTC())
+}
+
+// Compare compares the time instant t with u. If t is before u, it returns -1;
+// if t is after u, it returns +1; if they're the same, it returns 0.
+// The parameter u can be any Moment (time.Time or Time[TZ]).
+func (t Time[TZ]) Compare(u Moment) int {
+	return t.utcTime.Compare(u.UTC())
+}
+
+// IsZero reports whether t represents the zero time instant,
+// January 1, year 1, 00:00:00 UTC.
+func (t Time[TZ]) IsZero() bool {
+	return t.utcTime.IsZero()
+}
+
 // nativeTimeInLocation returns the native time in the location of the timezone.
 func (t Time[TZ]) nativeTimeInLocation() time.Time {
 	// This is a bit of a hack to get the timezone's location.
