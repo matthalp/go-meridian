@@ -3,6 +3,8 @@
 package meridian
 
 import (
+	"database/sql"
+	"database/sql/driver"
 	"encoding"
 	"encoding/json"
 	"fmt"
@@ -65,6 +67,8 @@ var (
 	_ encoding.TextUnmarshaler   = (*Time[Timezone])(nil)
 	_ encoding.BinaryMarshaler   = Time[Timezone]{}
 	_ encoding.BinaryUnmarshaler = (*Time[Timezone])(nil)
+	_ driver.Valuer              = Time[Timezone]{}
+	_ sql.Scanner                = (*Time[Timezone])(nil)
 )
 
 // Formatting & String Output
@@ -376,6 +380,31 @@ func (t Time[TZ]) GobEncode() ([]byte, error) {
 // GobDecode implements the gob.GobDecoder interface.
 func (t *Time[TZ]) GobDecode(data []byte) error {
 	return t.utcTime.GobDecode(data)
+}
+
+// Database/SQL Support
+
+// Value implements the driver.Valuer interface for database/sql.
+// The time is stored as UTC in the database.
+func (t Time[TZ]) Value() (driver.Value, error) {
+	return t.utcTime, nil
+}
+
+// Scan implements the sql.Scanner interface for database/sql.
+// It accepts time.Time values and stores them as UTC internally.
+func (t *Time[TZ]) Scan(value interface{}) error {
+	if value == nil {
+		t.utcTime = time.Time{}
+		return nil
+	}
+
+	switch v := value.(type) {
+	case time.Time:
+		t.utcTime = v.UTC()
+		return nil
+	default:
+		return fmt.Errorf("cannot scan type %T into meridian.Time", value)
+	}
 }
 
 // nativeTimeInLocation returns the native time in the location of the timezone.
