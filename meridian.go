@@ -2,7 +2,10 @@
 // Because timezone information shouldn't be optional.
 package meridian
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // Version is the current version of the meridian package.
 const Version = "0.0.0"
@@ -50,9 +53,35 @@ type Time[TZ Timezone] struct {
 	utcTime time.Time
 }
 
+// Compile-time interface assertions.
+var (
+	_ fmt.Stringer   = Time[Timezone]{}
+	_ fmt.GoStringer = Time[Timezone]{}
+)
+
+// Formatting & String Output
+
 // Format is a wrapper around time.Time.Format that returns the time in the timezone's location.
 func (t Time[TZ]) Format(layout string) string {
 	return t.nativeTimeInLocation().Format(layout)
+}
+
+// AppendFormat is like Format but appends the textual representation to b and returns
+// the extended buffer.
+func (t Time[TZ]) AppendFormat(b []byte, layout string) []byte {
+	return t.nativeTimeInLocation().AppendFormat(b, layout)
+}
+
+// String returns the time formatted using the RFC3339 layout with the timezone's location.
+// It implements the fmt.Stringer interface.
+func (t Time[TZ]) String() string {
+	return t.nativeTimeInLocation().String()
+}
+
+// GoString returns a string representation of the Time value in Go syntax.
+// It implements the fmt.GoStringer interface for use in debugging.
+func (t Time[TZ]) GoString() string {
+	return fmt.Sprintf("meridian.Time[%s]{%s}", t.Location().String(), t.Format(time.RFC3339Nano))
 }
 
 // UTC returns the time as a standard time.Time in UTC.

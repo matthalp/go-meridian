@@ -1,6 +1,7 @@
 package meridian
 
 import (
+	"fmt"
 	"testing"
 	"time"
 )
@@ -1564,4 +1565,210 @@ func TestTimezoneConversions(t *testing.T) {
 	if !utcStd.Equal(pstStd) || !utcStd.Equal(estStd) {
 		t.Error("All conversions should represent the same moment")
 	}
+}
+
+func TestAppendFormat(t *testing.T) {
+	testTime := Date[UTC](2024, time.June, 15, 14, 30, 45, 0)
+
+	tests := []struct {
+		name     string
+		initial  []byte
+		layout   string
+		expected string
+	}{
+		{
+			name:     "append to empty slice",
+			initial:  []byte{},
+			layout:   time.RFC3339,
+			expected: "2024-06-15T14:30:45Z",
+		},
+		{
+			name:     "append to existing slice",
+			initial:  []byte("Time: "),
+			layout:   time.Kitchen,
+			expected: "Time: 2:30PM",
+		},
+		{
+			name:     "append custom format",
+			initial:  []byte("Date is "),
+			layout:   "2006-01-02",
+			expected: "Date is 2024-06-15",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := testTime.AppendFormat(tt.initial, tt.layout)
+			if string(result) != tt.expected {
+				t.Errorf("AppendFormat() = %q, want %q", string(result), tt.expected)
+			}
+		})
+	}
+}
+
+func TestAppendFormatPreservesCapacity(t *testing.T) {
+	testTime := Date[UTC](2024, time.June, 15, 14, 30, 45, 0)
+
+	// Create a buffer with capacity
+	buf := make([]byte, 0, 100)
+	originalCap := cap(buf)
+
+	// AppendFormat should reuse the existing capacity
+	result := testTime.AppendFormat(buf, time.RFC3339)
+
+	// Capacity should not have changed (no reallocation)
+	if cap(result) != originalCap {
+		t.Errorf("AppendFormat() changed capacity: got %d, want %d", cap(result), originalCap)
+	}
+}
+
+func TestString(t *testing.T) {
+	tests := []struct {
+		name     string
+		time     Time[UTC]
+		expected string
+	}{
+		{
+			name:     "standard time",
+			time:     Date[UTC](2024, time.June, 15, 14, 30, 45, 0),
+			expected: "2024-06-15 14:30:45 +0000 UTC",
+		},
+		{
+			name:     "midnight",
+			time:     Date[UTC](2024, time.January, 1, 0, 0, 0, 0),
+			expected: "2024-01-01 00:00:00 +0000 UTC",
+		},
+		{
+			name:     "with nanoseconds",
+			time:     Date[UTC](2024, time.June, 15, 14, 30, 45, 123456789),
+			expected: "2024-06-15 14:30:45.123456789 +0000 UTC",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.time.String()
+			if result != tt.expected {
+				t.Errorf("String() = %q, want %q", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestStringInDifferentTimezones(t *testing.T) {
+	// Create same moment in different timezones
+	utcTime := Date[UTC](2024, time.January, 15, 12, 0, 0, 0)
+	estTime := Date[EST](2024, time.January, 15, 7, 0, 0, 0) // Same moment
+	pstTime := Date[PST](2024, time.January, 15, 4, 0, 0, 0) // Same moment
+
+	// String should show different times based on timezone
+	utcStr := utcTime.String()
+	estStr := estTime.String()
+	pstStr := pstTime.String()
+
+	// UTC should show 12:00
+	if utcStr != "2024-01-15 12:00:00 +0000 UTC" {
+		t.Errorf("UTC String() = %q, want %q", utcStr, "2024-01-15 12:00:00 +0000 UTC")
+	}
+
+	// EST should show 7:00 with EST timezone name
+	if estStr != "2024-01-15 07:00:00 -0500 EST" {
+		t.Errorf("EST String() = %q, want %q", estStr, "2024-01-15 07:00:00 -0500 EST")
+	}
+
+	// PST should show 4:00 with PST timezone name
+	if pstStr != "2024-01-15 04:00:00 -0800 PST" {
+		t.Errorf("PST String() = %q, want %q", pstStr, "2024-01-15 04:00:00 -0800 PST")
+	}
+}
+
+func TestStringWithPrint(t *testing.T) {
+	// Test that String() is called by fmt.Print family
+	testTime := Date[UTC](2024, time.June, 15, 14, 30, 45, 0)
+
+	// fmt.Sprint should use String() method
+	result := testTime.String()
+	expected := "2024-06-15 14:30:45 +0000 UTC"
+
+	if result != expected {
+		t.Errorf("String() = %q, want %q", result, expected)
+	}
+}
+
+func TestGoString(t *testing.T) {
+	tests := []struct {
+		name     string
+		time     Time[UTC]
+		contains []string
+	}{
+		{
+			name: "UTC time",
+			time: Date[UTC](2024, time.June, 15, 14, 30, 45, 123456789),
+			contains: []string{
+				"meridian.Time",
+				"UTC",
+				"2024-06-15T14:30:45",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.time.GoString()
+
+			// Check that all expected substrings are present
+			for _, substr := range tt.contains {
+				if !contains(result, substr) {
+					t.Errorf("GoString() = %q, expected to contain %q", result, substr)
+				}
+			}
+		})
+	}
+}
+
+func TestGoStringInDifferentTimezones(t *testing.T) {
+	utcTime := Date[UTC](2024, time.June, 15, 14, 30, 45, 0)
+	estTime := Date[EST](2024, time.June, 15, 10, 30, 45, 0) // Same moment as UTC
+
+	utcGoStr := utcTime.GoString()
+	estGoStr := estTime.GoString()
+
+	// UTC GoString should contain "UTC"
+	if !contains(utcGoStr, "UTC") {
+		t.Errorf("UTC GoString() = %q, expected to contain 'UTC'", utcGoStr)
+	}
+
+	// EST GoString should contain "America/New_York"
+	if !contains(estGoStr, "America/New_York") {
+		t.Errorf("EST GoString() = %q, expected to contain 'America/New_York'", estGoStr)
+	}
+}
+
+func TestGoStringWithPrintf(t *testing.T) {
+	// Test that GoString() is called by fmt.Printf with %#v
+	testTime := Date[UTC](2024, time.June, 15, 14, 30, 45, 0)
+
+	result := fmt.Sprintf("%#v", testTime)
+
+	// Should contain the GoString representation
+	if !contains(result, "meridian.Time") {
+		t.Errorf("fmt.Sprintf(%%#v) = %q, expected to contain 'meridian.Time'", result)
+	}
+	if !contains(result, "UTC") {
+		t.Errorf("fmt.Sprintf(%%#v) = %q, expected to contain 'UTC'", result)
+	}
+}
+
+// Helper function to check if a string contains a substring.
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && containsSubstring(s, substr))
+}
+
+func containsSubstring(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
 }
