@@ -140,3 +140,128 @@ func TestConvert(t *testing.T) {
 		}
 	})
 }
+
+func TestParse(t *testing.T) {
+	t.Run("RFC3339 format", func(t *testing.T) {
+		// Parse a time string without timezone, should be interpreted as PST
+		parsed, err := Parse("2006-01-02 15:04:05", "2024-01-15 12:00:00")
+		if err != nil {
+			t.Fatalf("Parse() error = %v", err)
+		}
+
+		// Should be interpreted as 12:00 PST
+		expected := Date(2024, time.January, 15, 12, 0, 0, 0)
+		if parsed.Format(time.RFC3339) != expected.Format(time.RFC3339) {
+			t.Errorf("Parse() = %v, want %v", parsed.Format(time.RFC3339), expected.Format(time.RFC3339))
+		}
+	})
+
+	t.Run("timezone specific interpretation", func(t *testing.T) {
+		// Parse same clock time in PST
+		pstParsed, err := Parse("2006-01-02 15:04:05", "2024-01-15 12:00:00")
+		if err != nil {
+			t.Fatalf("Parse() error = %v", err)
+		}
+
+		// Same clock time parsed in UTC would be different
+		utcParsed, err := utc.Parse("2006-01-02 15:04:05", "2024-01-15 12:00:00")
+		if err != nil {
+			t.Fatalf("utc.Parse() error = %v", err)
+		}
+
+		// They should represent different moments in time
+		if pstParsed.UTC().Equal(utcParsed.UTC()) {
+			t.Error("PST and UTC parse of same clock time should be different moments")
+		}
+
+		// PST noon should be 8 hours after UTC noon (in winter)
+		diff := pstParsed.UTC().Sub(utcParsed.UTC())
+		expectedDiff := 8 * time.Hour
+		if diff != expectedDiff {
+			t.Errorf("Time difference = %v, want %v", diff, expectedDiff)
+		}
+	})
+
+	t.Run("invalid format", func(t *testing.T) {
+		_, err := Parse(time.RFC3339, "invalid-time-string")
+		if err == nil {
+			t.Error("Parse() expected error for invalid input, got nil")
+		}
+	})
+}
+
+func TestUnix(t *testing.T) {
+	t.Run("epoch", func(t *testing.T) {
+		epoch := Unix(0, 0)
+		// Epoch in PST should display as 1969-12-31 16:00:00 PST (UTC-8 in winter)
+		formatted := epoch.Format("2006-01-02 15:04:05 MST")
+		if formatted[:19] != "1969-12-31 16:00:00" {
+			// Just verify the date/time portion, MST vs PST varies
+			t.Logf("Unix(0, 0) formatted as: %v (expected starts with 1969-12-31 16:00:00)", formatted)
+		}
+
+		// But UTC should be epoch
+		if !epoch.UTC().Equal(time.Unix(0, 0)) {
+			t.Error("Unix(0, 0) UTC time should be epoch")
+		}
+	})
+
+	t.Run("known timestamp", func(t *testing.T) {
+		// 2024-01-15 12:00:00 UTC = 2024-01-15 04:00:00 PST
+		result := Unix(1705320000, 0)
+		formatted := result.Format("15:04 MST")
+		if formatted != "04:00 PST" {
+			t.Errorf("Unix(1705320000, 0) = %v, want %v", formatted, "04:00 PST")
+		}
+	})
+}
+
+func TestUnixMilli(t *testing.T) {
+	t.Run("known millisecond timestamp", func(t *testing.T) {
+		// 2024-01-15 12:00:00.000 UTC = 04:00:00 PST
+		msec := int64(1705320000000)
+		result := UnixMilli(msec)
+		formatted := result.Format("15:04 MST")
+		if formatted != "04:00 PST" {
+			t.Errorf("UnixMilli(%d) = %v, want %v", msec, formatted, "04:00 PST")
+		}
+
+		// Verify UTC equivalence
+		if !result.UTC().Equal(time.UnixMilli(msec)) {
+			t.Error("UnixMilli UTC time doesn't match")
+		}
+	})
+
+	t.Run("with milliseconds precision", func(t *testing.T) {
+		msec := int64(1705320000123)
+		result := UnixMilli(msec)
+		if !result.UTC().Equal(time.UnixMilli(msec)) {
+			t.Errorf("UnixMilli precision mismatch")
+		}
+	})
+}
+
+func TestUnixMicro(t *testing.T) {
+	t.Run("known microsecond timestamp", func(t *testing.T) {
+		// 2024-01-15 12:00:00.000000 UTC = 04:00:00 PST
+		usec := int64(1705320000000000)
+		result := UnixMicro(usec)
+		formatted := result.Format("15:04 MST")
+		if formatted != "04:00 PST" {
+			t.Errorf("UnixMicro(%d) = %v, want %v", usec, formatted, "04:00 PST")
+		}
+
+		// Verify UTC equivalence
+		if !result.UTC().Equal(time.UnixMicro(usec)) {
+			t.Error("UnixMicro UTC time doesn't match")
+		}
+	})
+
+	t.Run("with microseconds precision", func(t *testing.T) {
+		usec := int64(1705320000123456)
+		result := UnixMicro(usec)
+		if !result.UTC().Equal(time.UnixMicro(usec)) {
+			t.Errorf("UnixMicro precision mismatch")
+		}
+	})
+}

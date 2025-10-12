@@ -157,3 +157,107 @@ func TestConvert(t *testing.T) {
 		}
 	})
 }
+
+func TestParse(t *testing.T) {
+	t.Run("RFC3339 format", func(t *testing.T) {
+		parsed, err := Parse(time.RFC3339, "2024-01-15T12:00:00Z")
+		if err != nil {
+			t.Fatalf("Parse() error = %v", err)
+		}
+
+		expected := Date(2024, time.January, 15, 12, 0, 0, 0)
+		if parsed.Format(time.RFC3339) != expected.Format(time.RFC3339) {
+			t.Errorf("Parse() = %v, want %v", parsed.Format(time.RFC3339), expected.Format(time.RFC3339))
+		}
+	})
+
+	t.Run("custom format", func(t *testing.T) {
+		parsed, err := Parse("2006-01-02 15:04:05", "2024-01-15 12:00:00")
+		if err != nil {
+			t.Fatalf("Parse() error = %v", err)
+		}
+
+		result := parsed.Format("2006-01-02 15:04:05")
+		if result != "2024-01-15 12:00:00" {
+			t.Errorf("Parse() formatted = %v, want %v", result, "2024-01-15 12:00:00")
+		}
+	})
+
+	t.Run("invalid format", func(t *testing.T) {
+		_, err := Parse(time.RFC3339, "invalid-time-string")
+		if err == nil {
+			t.Error("Parse() expected error for invalid input, got nil")
+		}
+	})
+}
+
+func TestUnix(t *testing.T) {
+	t.Run("epoch", func(t *testing.T) {
+		epoch := Unix(0, 0)
+		expected := "1970-01-01T00:00:00Z"
+		if epoch.Format(time.RFC3339) != expected {
+			t.Errorf("Unix(0, 0) = %v, want %v", epoch.Format(time.RFC3339), expected)
+		}
+	})
+
+	t.Run("known timestamp", func(t *testing.T) {
+		// 2024-01-15 12:00:00 UTC
+		result := Unix(1705320000, 0)
+		expected := "2024-01-15T12:00:00Z"
+		if result.Format(time.RFC3339) != expected {
+			t.Errorf("Unix(1705320000, 0) = %v, want %v", result.Format(time.RFC3339), expected)
+		}
+	})
+
+	t.Run("with nanoseconds", func(t *testing.T) {
+		result := Unix(1705320000, 500000000)
+		// Should be 12:00:00.5
+		if !result.UTC().Equal(time.Unix(1705320000, 500000000)) {
+			t.Errorf("Unix with nanoseconds didn't match expected time")
+		}
+	})
+}
+
+func TestUnixMilli(t *testing.T) {
+	t.Run("known millisecond timestamp", func(t *testing.T) {
+		// 2024-01-15 12:00:00.000 UTC
+		msec := int64(1705320000000)
+		result := UnixMilli(msec)
+		expected := "2024-01-15T12:00:00Z"
+		if result.Format(time.RFC3339) != expected {
+			t.Errorf("UnixMilli(%d) = %v, want %v", msec, result.Format(time.RFC3339), expected)
+		}
+	})
+
+	t.Run("with milliseconds precision", func(t *testing.T) {
+		// 2024-01-15 12:00:00.123 UTC
+		msec := int64(1705320000123)
+		result := UnixMilli(msec)
+		stdTime := time.UnixMilli(msec)
+		if !result.UTC().Equal(stdTime) {
+			t.Errorf("UnixMilli precision mismatch")
+		}
+	})
+}
+
+func TestUnixMicro(t *testing.T) {
+	t.Run("known microsecond timestamp", func(t *testing.T) {
+		// 2024-01-15 12:00:00.000000 UTC
+		usec := int64(1705320000000000)
+		result := UnixMicro(usec)
+		expected := "2024-01-15T12:00:00Z"
+		if result.Format(time.RFC3339) != expected {
+			t.Errorf("UnixMicro(%d) = %v, want %v", usec, result.Format(time.RFC3339), expected)
+		}
+	})
+
+	t.Run("with microseconds precision", func(t *testing.T) {
+		// 2024-01-15 12:00:00.123456 UTC
+		usec := int64(1705320000123456)
+		result := UnixMicro(usec)
+		stdTime := time.UnixMicro(usec)
+		if !result.UTC().Equal(stdTime) {
+			t.Errorf("UnixMicro precision mismatch")
+		}
+	})
+}
