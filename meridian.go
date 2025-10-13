@@ -12,7 +12,7 @@ import (
 )
 
 // Version is the current version of the meridian package.
-const Version = "0.0.0"
+const Version = "1.0.0"
 
 // Timezone interface that all timezone types must implement.
 type Timezone interface {
