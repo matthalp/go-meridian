@@ -50,8 +50,8 @@ func main() {
 	// Example 5: Converting between timezones
 	fmt.Println("5. Timezone Conversion:")
 	estMeeting := est.Date(2024, time.December, 25, 10, 30, 0, 0)
-	utcMeeting := utc.Convert(estMeeting)
-	pstMeeting := pst.Convert(estMeeting)
+	utcMeeting := utc.FromMoment(estMeeting)
+	pstMeeting := pst.FromMoment(estMeeting)
 
 	fmt.Printf("   Meeting EST: %s\n", estMeeting.Format(time.Kitchen))
 	fmt.Printf("   Meeting UTC: %s\n", utcMeeting.Format(time.Kitchen))
@@ -64,9 +64,9 @@ func main() {
 	fmt.Printf("   Standard time.Time: %s\n", stdTime.Format(time.RFC3339))
 
 	// Convert to timezone-specific types
-	utcFromStd := utc.Convert(stdTime)
-	estFromStd := est.Convert(stdTime)
-	pstFromStd := pst.Convert(stdTime)
+	utcFromStd := utc.FromMoment(stdTime)
+	estFromStd := est.FromMoment(stdTime)
+	pstFromStd := pst.FromMoment(stdTime)
 
 	fmt.Printf("   As UTC: %s\n", utcFromStd.Format("3:04 PM MST"))
 	fmt.Printf("   As EST: %s\n", estFromStd.Format("3:04 PM MST"))

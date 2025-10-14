@@ -65,15 +65,15 @@ func TestDateWithOffset(t *testing.T) {
 	}
 }
 
-func TestConvert(t *testing.T) {
+func TestFromMoment(t *testing.T) {
 	t.Run("from time.Time", func(t *testing.T) {
 		// Test converting from standard time.Time in UTC
 		stdTime := time.Date(2024, time.January, 15, 20, 0, 0, 0, time.UTC)
-		pstTime := Convert(stdTime)
+		pstTime := FromMoment(stdTime)
 
 		// Verify the conversion - should represent same moment
 		if !pstTime.UTC().Equal(stdTime) {
-			t.Errorf("Convert(time.Time) UTC = %v, want %v", pstTime.UTC(), stdTime)
+			t.Errorf("FromMoment(time.Time) UTC = %v, want %v", pstTime.UTC(), stdTime)
 		}
 
 		// Verify formatting shows PST (20:00 UTC = 12:00 PST)
@@ -88,7 +88,7 @@ func TestConvert(t *testing.T) {
 		utcTime := utc.Date(2024, time.January, 15, 20, 0, 0, 0)
 
 		// Convert to PST
-		pstTime := Convert(utcTime)
+		pstTime := FromMoment(utcTime)
 
 		// 20:00 UTC = 12:00 PST in winter
 		result := pstTime.Format("15:04 MST")
@@ -107,7 +107,7 @@ func TestConvert(t *testing.T) {
 		estTime := est.Date(2024, time.January, 15, 15, 0, 0, 0)
 
 		// Convert to PST
-		pstTime := Convert(estTime)
+		pstTime := FromMoment(estTime)
 
 		// 3:00 PM EST = 12:00 PM PST (3 hour difference)
 		result := pstTime.Format("15:04 MST")
@@ -126,7 +126,7 @@ func TestConvert(t *testing.T) {
 		original := Date(2024, time.January, 15, 10, 45, 0, 0)
 
 		// Convert to EST and back
-		viaEST := Convert(est.Convert(original))
+		viaEST := FromMoment(est.FromMoment(original))
 
 		// Should represent the same moment
 		if !viaEST.UTC().Equal(original.UTC()) {

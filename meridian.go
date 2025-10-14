@@ -43,6 +43,36 @@ func FromMoment[TZ Timezone](m Moment) Time[TZ] {
 	return Time[TZ]{utcTime: m.UTC()}
 }
 
+// Parse parses a formatted string and returns the time value it represents in the specified timezone.
+// The layout defines the format by showing how the reference time would be displayed.
+func Parse[TZ Timezone](layout, value string) (Time[TZ], error) {
+	loc := getLocation[TZ]()
+	t, err := time.ParseInLocation(layout, value, loc)
+	if err != nil {
+		return Time[TZ]{}, err
+	}
+	return Time[TZ]{utcTime: t.UTC()}, nil
+}
+
+// Unix returns the Time corresponding to the given Unix time,
+// sec seconds and nsec nanoseconds since January 1, 1970 UTC,
+// in the specified timezone.
+func Unix[TZ Timezone](sec, nsec int64) Time[TZ] {
+	return Time[TZ]{utcTime: time.Unix(sec, nsec).UTC()}
+}
+
+// UnixMilli returns the Time corresponding to the given Unix time,
+// msec milliseconds since January 1, 1970 UTC, in the specified timezone.
+func UnixMilli[TZ Timezone](msec int64) Time[TZ] {
+	return Time[TZ]{utcTime: time.UnixMilli(msec).UTC()}
+}
+
+// UnixMicro returns the Time corresponding to the given Unix time,
+// usec microseconds since January 1, 1970 UTC, in the specified timezone.
+func UnixMicro[TZ Timezone](usec int64) Time[TZ] {
+	return Time[TZ]{utcTime: time.UnixMicro(usec).UTC()}
+}
+
 // getLocation extracts the *time.Location from a timezone type.
 func getLocation[TZ Timezone]() *time.Location {
 	var tz TZ
