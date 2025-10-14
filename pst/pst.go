@@ -1,4 +1,30 @@
-// Package pst provides Pacific Standard Time timezone support for meridian.
+/*
+Package pst provides Pacific Standard Time timezone support for meridian.
+
+PST represents the America/Los_Angeles IANA timezone, which observes Pacific Standard Time (PST) and Pacific Daylight Time (PDT) depending on the time of year.
+
+# Usage
+
+Create PST times:
+
+	now := pst.Now()
+	event := pst.Date(2024, time.December, 25, 6, 0, 0, 0)
+	parsed, _ := pst.Parse(time.RFC3339, "2024-12-25T06:00:00-08:00")
+
+Convert to PST from other timezones:
+
+	eastern := est.Now()
+	pacific := pst.FromMoment(eastern)
+
+Convert from standard time.Time:
+
+	stdTime := time.Now()
+	typedTime := pst.FromMoment(stdTime)
+
+The pst.Time type is an alias for meridian.Time[pst.Timezone], providing
+compile-time timezone safety. Functions that accept pst.Time can only receive
+times explicitly typed as Pacific Standard Time, preventing timezone confusion.
+*/
 package pst
 
 import (
@@ -49,7 +75,7 @@ func FromMoment(m meridian.Moment) Time {
 
 // Parse parses a formatted string and returns the time value it represents in PST.
 // The layout defines the format by showing how the reference time would be displayed.
-// Note: ParseInLocation is not needed as the location is already PST.
+// The time is parsed in the America/Los_Angeles location.
 func Parse(layout, value string) (Time, error) {
 	return meridian.Parse[Timezone](layout, value)
 }

@@ -1,4 +1,27 @@
-// Package utc provides Coordinated Universal Time timezone support for meridian.
+/*
+Package utc provides Coordinated Universal Time timezone support for meridian.
+
+UTC (Coordinated Universal Time) is the primary time standard by which the world
+regulates clocks and time. It is timezone-neutral and does not observe daylight
+saving time.
+
+# Usage
+
+Create UTC times:
+
+	now := utc.Now()
+	specific := utc.Date(2024, time.December, 25, 10, 30, 0, 0)
+	parsed, _ := utc.Parse(time.RFC3339, "2024-12-25T10:30:00Z")
+
+Convert to UTC from other timezones:
+
+	eastern := est.Now()
+	universal := utc.FromMoment(eastern)
+
+The utc.Time type is an alias for meridian.Time[utc.Timezone], providing
+compile-time timezone safety while maintaining compatibility with standard
+time.Time through the Moment interface.
+*/
 package utc
 
 import (
@@ -49,7 +72,7 @@ func FromMoment(m meridian.Moment) Time {
 
 // Parse parses a formatted string and returns the time value it represents in UTC.
 // The layout defines the format by showing how the reference time would be displayed.
-// Note: ParseInLocation is not needed as the location is already UTC.
+// The time is parsed in the UTC location.
 func Parse(layout, value string) (Time, error) {
 	return meridian.Parse[Timezone](layout, value)
 }
