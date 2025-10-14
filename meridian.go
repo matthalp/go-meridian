@@ -1,5 +1,74 @@
-// Package meridian provides first-class, type-safe timezones for Go.
-// Because timezone information shouldn't be optional.
+/*
+Package meridian provides first-class, type-safe timezones for Go.
+
+# The Problem: Timezones Are Data, Not Types
+
+In Go's standard time package, timezone information in time.Time is optional data
+that can be silently lost or misinterpreted. The compiler provides no protection:
+
+	func ProcessDeadline(deadline time.Time) {
+		// Is deadline in UTC? EST? The user's local time?
+		// If the caller passes the wrong timezone, it compiles but causes bugs.
+	}
+
+This leads to subtle bugs in production where times are interpreted in the wrong
+timezone, causing incorrect behavior.
+
+# The Solution: Timezone as Type
+
+Meridian encodes timezone information directly in the type system using Go generics.
+Time[TZ] is a time.Time wrapper where TZ is a timezone type parameter:
+
+	import "github.com/matthalp/go-meridian/utc"
+
+	func ProcessDeadline(deadline utc.Time) {
+		// Now the timezone is guaranteed by the compiler!
+		// Only UTC times can be passed, preventing timezone bugs.
+	}
+
+Different timezones are incompatible types. meridian.Time[est.EST] and
+meridian.Time[pst.PST] cannot be mixed without explicit conversion:
+
+	func ProcessEST(t est.Time) {
+		// ... do something ...
+	}
+
+	ProcessEST(pst.Now())  // Compile error: cannot use pst.Time as est.Time
+
+# Core Design
+
+Type-Safe Times: Time[TZ] carries timezone information as a type parameter,
+making timezone part of the type system rather than runtime data.
+
+Explicit Conversions: Converting between timezones requires explicit function calls
+using the FromMoment function, making timezone handling visible in code review:
+
+	eastern := est.Now()
+	pacific := pst.FromMoment(eastern)  // Explicit and reviewable
+
+Moment Interface: Both time.Time and Time[TZ] implement the Moment interface,
+enabling seamless interoperability with existing code:
+
+	type Moment interface {
+		UTC() time.Time
+	}
+
+Internal UTC Storage: All times are stored as UTC internally, eliminating DST
+ambiguity and making database storage straightforward. The timezone is applied
+during display and component extraction operations.
+
+Per-Timezone Packages: Each timezone has its own package (est, pst, utc) with
+convenience functions like est.Now() and pst.Date(...), plus a Time alias
+for meridian.Time[Timezone].
+
+# Philosophy
+
+"Make wrong timezone handling impossible to compile."
+
+Meridian prioritizes compile-time safety over convenience and performance.
+Explicit conversions and type-safe APIs make timezone handling visible and
+prevent an entire class of bugs from reaching production.
+*/
 package meridian
 
 import (
@@ -15,22 +84,32 @@ import (
 const Version = "1.0.0"
 
 // Timezone interface that all timezone types must implement.
+// Each timezone package defines its own Timezone type that satisfies this interface,
+// enabling Time[TZ] to be parameterized with type-safe timezone information.
 type Timezone interface {
 	Location() *time.Location
 }
 
 // Moment represents a moment in time that can be converted to UTC.
+// Both time.Time and Time[TZ] implement this interface, enabling functions
+// to accept either type while maintaining interoperability with the standard library.
 type Moment interface {
 	UTC() time.Time
 }
 
 // Now returns the current time in the specified timezone.
+// The timezone type parameter TZ is typically inferred from context or explicitly
+// specified. For most use cases, prefer timezone-specific helpers like est.Now()
+// or utc.Now() for better readability.
 func Now[TZ Timezone]() Time[TZ] {
 	return Time[TZ]{utcTime: time.Now().UTC()}
 }
 
 // Date returns the Time corresponding to the specified date and time
-// in the specified timezone.
+// in the specified timezone. The date components are interpreted in the timezone's
+// location, then stored internally as UTC. The timezone type is preserved in the
+// return type, ensuring type-safe handling. For most use cases, prefer timezone-specific
+// helpers like est.Date() or utc.Date() for better readability.
 func Date[TZ Timezone](year int, month time.Month, day, hour, minute, sec, nsec int) Time[TZ] {
 	loc := getLocation[TZ]()
 	t := time.Date(year, month, day, hour, minute, sec, nsec, loc)
@@ -38,7 +117,10 @@ func Date[TZ Timezone](year int, month time.Month, day, hour, minute, sec, nsec 
 }
 
 // FromMoment creates a Time[TZ] from any Moment (e.g., time.Time or another Time[TZ]).
-// The Moment is converted to UTC and wrapped in the specified timezone type.
+// This is the primary way to convert between timezones explicitly. The conversion
+// preserves the moment in time (UTC equality) but changes the timezone type, making
+// the conversion visible in code review. For most use cases, prefer timezone-specific
+// helpers like est.FromMoment() or pst.FromMoment() for better readability.
 func FromMoment[TZ Timezone](m Moment) Time[TZ] {
 	return Time[TZ]{utcTime: m.UTC()}
 }
@@ -79,11 +161,15 @@ func getLocation[TZ Timezone]() *time.Location {
 	return tz.Location()
 }
 
-// Time is a time.Time wrapper that carries timezone information in its type.
+// Time is a time.Time wrapper that carries timezone information in its type parameter.
+// Unlike time.Time where timezone is optional data, Time[TZ] makes timezone part of
+// the type system, providing compile-time safety. Different timezone types are
+// incompatible, preventing accidental timezone mixing.
 type Time[TZ Timezone] struct {
 	// utcTime is the internal representation of time, stored in UTC.
 	// We use UTC internally because the zero value of time.Time in Go is UTC,
-	// which ensures our zero values have well-defined behavior.
+	// which ensures our zero values have well-defined behavior. The timezone
+	// type parameter TZ is applied during display and component extraction.
 	utcTime time.Time
 }
 
@@ -127,6 +213,8 @@ func (t Time[TZ]) GoString() string {
 }
 
 // UTC returns the time as a standard time.Time in UTC.
+// This method implements the Moment interface, enabling interoperability with
+// both time.Time and other Time[TZ] types. The returned time.Time is always in UTC.
 func (t Time[TZ]) UTC() time.Time {
 	return t.utcTime
 }
@@ -134,6 +222,8 @@ func (t Time[TZ]) UTC() time.Time {
 // Time Arithmetic & Manipulation
 
 // Add returns the time t+d, preserving the timezone type.
+// The timezone type is maintained in the return value, ensuring that operations
+// on typed times continue to provide type-safe timezone guarantees.
 func (t Time[TZ]) Add(d time.Duration) Time[TZ] {
 	return Time[TZ]{utcTime: t.utcTime.Add(d)}
 }

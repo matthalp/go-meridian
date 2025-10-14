@@ -116,7 +116,50 @@ func generateFile(filename string, tmpl *template.Template, data TemplateData) e
 	return nil
 }
 
-var packageTemplate = template.Must(template.New("package").Parse(`// Package {{.PackageName}} provides {{.Description}} timezone support for meridian.
+var packageTemplate = template.Must(template.New("package").Parse(`/*
+Package {{.PackageName}} provides {{.Description}} timezone support for meridian.
+{{if eq .PackageName "utc"}}
+{{.Abbrev}} ({{.Description}}) is the primary time standard by which the world
+regulates clocks and time. It is timezone-neutral and does not observe daylight
+saving time.
+{{else}}
+{{.Abbrev}} represents the {{.Location}} IANA timezone, which observes {{.Description}}{{if eq .PackageName "est"}} (EST) and Eastern Daylight Time (EDT){{else if eq .PackageName "pst"}} (PST) and Pacific Daylight Time (PDT){{end}} depending on the time of year.
+{{end}}
+# Usage
+
+Create {{.Abbrev}} times:
+
+	now := {{.PackageName}}.Now()
+{{if eq .PackageName "est"}}	meeting := {{.PackageName}}.Date(2024, time.December, 25, 9, 0, 0, 0)
+{{else if eq .PackageName "pst"}}	event := {{.PackageName}}.Date(2024, time.December, 25, 6, 0, 0, 0)
+{{else}}	specific := {{.PackageName}}.Date(2024, time.December, 25, 10, 30, 0, 0)
+{{end}}	parsed, _ := {{.PackageName}}.Parse(time.RFC3339, "2024-12-25T{{if eq .PackageName "est"}}09:00:00-05:00{{else if eq .PackageName "pst"}}06:00:00-08:00{{else}}10:30:00Z{{end}}")
+{{if eq .PackageName "utc"}}
+Convert to {{.Abbrev}} from other timezones:
+
+	eastern := est.Now()
+	universal := {{.PackageName}}.FromMoment(eastern)
+
+The {{.PackageName}}.Time type is an alias for meridian.Time[{{.PackageName}}.Timezone], providing
+compile-time timezone safety while maintaining compatibility with standard
+time.Time through the Moment interface.
+{{else}}
+Convert to {{.Abbrev}} from other timezones:
+
+{{if eq .PackageName "est"}}	pacific := pst.Now()
+	eastern := {{.PackageName}}.FromMoment(pacific)
+{{else}}	eastern := est.Now()
+	pacific := {{.PackageName}}.FromMoment(eastern)
+{{end}}
+Convert from standard time.Time:
+
+	stdTime := time.Now()
+	typedTime := {{.PackageName}}.FromMoment(stdTime)
+
+The {{.PackageName}}.Time type is an alias for meridian.Time[{{.PackageName}}.Timezone], providing
+compile-time timezone safety. Functions that accept {{.PackageName}}.Time can only receive
+times explicitly typed as {{.Description}}, preventing timezone confusion.
+{{end}}*/
 package {{.PackageName}}
 
 import (
@@ -167,7 +210,7 @@ func FromMoment(m meridian.Moment) Time {
 
 // Parse parses a formatted string and returns the time value it represents in {{.Abbrev}}.
 // The layout defines the format by showing how the reference time would be displayed.
-// Note: ParseInLocation is not needed as the location is already {{.Abbrev}}.
+// The time is parsed in the {{.Location}} location.
 func Parse(layout, value string) (Time, error) {
 	return meridian.Parse[Timezone](layout, value)
 }

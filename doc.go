@@ -1,37 +1,132 @@
 /*
-Package meridian provides [describe your package functionality here].
+Package meridian provides type-safe timezone handling for Go using generics.
+
+# The Problem
+
+In Go's standard library, timezone information in time.Time is data, not type.
+This means timezone information can be silently lost, leading to bugs:
+
+	func SaveDeadline(t time.Time) {
+		// Is this UTC? EST? PST? The compiler can't help you.
+		// If someone passes the wrong timezone, it compiles fine but causes bugs.
+	}
+
+Meridian makes timezone information immutable by encoding it directly into the type system.
+
+# The Solution
+
+Meridian's Time[TZ] type carries timezone information as a type parameter:
+
+	import (
+		"github.com/matthalp/go-meridian/est"
+		"github.com/matthalp/go-meridian/pst"
+		"github.com/matthalp/go-meridian/utc"
+	)
+
+	func SaveDeadline(t utc.Time) {
+		// Now the timezone is part of the function signature!
+		// The compiler enforces timezone correctness.
+	}
+
+Different timezones are different types, so meridian.Time[est.EST] and
+meridian.Time[pst.PST] cannot be accidentally mixed:
+
+	func ProcessEST(t est.Time) {
+		// ... do something ...
+	}
+
+	ProcessEST(pst.Now())  // Compile error: type mismatch!
+
+# Core Concepts
+
+Type-Safe Timezones: Each timezone is a distinct type. meridian.Time[est.EST]
+and meridian.Time[pst.PST] are as different as string and int.
+
+Per-Timezone Packages: Each timezone has its own package (est, pst, utc, etc.)
+with convenience functions like est.Now() and pst.Date(...).
+
+Explicit Conversions: Converting between timezones requires explicit function calls:
+
+	eastern := est.Now()
+	pacific := pst.FromMoment(eastern)  // Explicit conversion
+	utcTime := utc.FromMoment(eastern)  // Convert to UTC for storage
+
+The Moment Interface: Both time.Time and meridian.Time[TZ] implement Moment,
+enabling seamless interoperability:
+
+	type Moment interface {
+		UTC() time.Time
+	}
+
+Internal UTC Storage: All times are stored as UTC internally, making them
+safe for database storage and eliminating ambiguity.
+
+# Quick Start
+
+Create times in specific timezones:
+
+	// Current time
+	now := utc.Now()
+
+	// Specific date/time
+	meeting := est.Date(2024, time.December, 25, 10, 30, 0, 0)
+
+	// Parse from string
+	parsed, err := pst.Parse(time.RFC3339, "2024-12-25T10:30:00-08:00")
+
+	// From time.Time
+	stdTime := time.Now()
+	typed := utc.FromMoment(stdTime)
+
+Convert between timezones explicitly:
+
+	eastern := est.Date(2024, time.December, 25, 9, 0, 0, 0)
+	pacific := pst.FromMoment(eastern)  // Same moment, different timezone
+	utcTime := utc.FromMoment(eastern)  // Convert to UTC
+
+Work with time.Time seamlessly:
+
+	func processTime(m meridian.Moment) {
+		utcTime := m.UTC()  // Works with both time.Time and meridian.Time[TZ]
+		// ... do something with utcTime ...
+	}
+
+	processTime(time.Now())      // Works
+	processTime(est.Now())       // Works
+	processTime(pst.Now())       // Works
+
+Write type-safe APIs:
+
+	// Only accepts UTC times
+	func SaveToDatabase(t utc.Time) error {
+		return db.Save(t.UTC())
+	}
+
+	// Generic function that works with any timezone
+	func FormatTime[TZ meridian.Timezone](t meridian.Time[TZ]) string {
+		return t.Format(time.RFC3339)
+	}
+
+# Available Timezones
+
+The package includes these timezone packages:
+  - utc: Coordinated Universal Time
+  - est: Eastern Standard Time (America/New_York)
+  - pst: Pacific Standard Time (America/Los_Angeles)
+
+Additional timezones can be generated using the timezones.yaml configuration.
+More can be added with sufficient demand.
 
 # Installation
 
-To install the package, run:
-
 	go get github.com/matthalp/go-meridian
 
-# Usage
+# Design Philosophy
 
-Import the package in your Go code:
+"Make wrong timezone handling impossible to compile."
 
-	import "github.com/matthalp/go-meridian"
-
-Basic usage example:
-
-	package main
-
-	import (
-		"fmt"
-
-		"github.com/matthalp/go-meridian"
-	)
-
-	func main() {
-		greeting := meridian.Greet("World")
-		fmt.Println(greeting) // Output: Hello, World!
-	}
-
-# Features
-
-- Feature 1: [describe feature]
-- Feature 2: [describe feature]
-- Feature 3: [describe feature]
+Meridian prioritizes compile-time safety over convenience and performance.
+Explicit timezone conversions make timezone handling visible in code review,
+reducing bugs in production.
 */
 package meridian

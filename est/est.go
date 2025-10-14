@@ -1,4 +1,30 @@
-// Package est provides Eastern Standard Time timezone support for meridian.
+/*
+Package est provides Eastern Standard Time timezone support for meridian.
+
+EST represents the America/New_York IANA timezone, which observes Eastern Standard Time (EST) and Eastern Daylight Time (EDT) depending on the time of year.
+
+# Usage
+
+Create EST times:
+
+	now := est.Now()
+	meeting := est.Date(2024, time.December, 25, 9, 0, 0, 0)
+	parsed, _ := est.Parse(time.RFC3339, "2024-12-25T09:00:00-05:00")
+
+Convert to EST from other timezones:
+
+	pacific := pst.Now()
+	eastern := est.FromMoment(pacific)
+
+Convert from standard time.Time:
+
+	stdTime := time.Now()
+	typedTime := est.FromMoment(stdTime)
+
+The est.Time type is an alias for meridian.Time[est.Timezone], providing
+compile-time timezone safety. Functions that accept est.Time can only receive
+times explicitly typed as Eastern Standard Time, preventing timezone confusion.
+*/
 package est
 
 import (
@@ -49,7 +75,7 @@ func FromMoment(m meridian.Moment) Time {
 
 // Parse parses a formatted string and returns the time value it represents in EST.
 // The layout defines the format by showing how the reference time would be displayed.
-// Note: ParseInLocation is not needed as the location is already EST.
+// The time is parsed in the America/New_York location.
 func Parse(layout, value string) (Time, error) {
 	return meridian.Parse[Timezone](layout, value)
 }
