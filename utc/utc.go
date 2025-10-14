@@ -2,13 +2,24 @@
 package utc
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/matthalp/go-meridian"
 )
 
 // location is the IANA timezone location, loaded once at package initialization.
-var location = time.UTC
+var location = mustLoadLocation("UTC")
+
+// mustLoadLocation loads a timezone location or panics if it fails.
+// This should only fail if the system's timezone database is corrupted or missing.
+func mustLoadLocation(name string) *time.Location {
+	loc, err := time.LoadLocation(name)
+	if err != nil {
+		panic(fmt.Sprintf("failed to load timezone %s: %v", name, err))
+	}
+	return loc
+}
 
 // Timezone represents the Coordinated Universal Time timezone.
 type Timezone struct{}
@@ -38,6 +49,7 @@ func FromMoment(m meridian.Moment) Time {
 
 // Parse parses a formatted string and returns the time value it represents in UTC.
 // The layout defines the format by showing how the reference time would be displayed.
+// Note: ParseInLocation is not needed as the location is already UTC.
 func Parse(layout, value string) (Time, error) {
 	return meridian.Parse[Timezone](layout, value)
 }
