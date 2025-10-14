@@ -80,15 +80,15 @@ func TestDate(t *testing.T) {
 	}
 }
 
-func TestConvert(t *testing.T) {
+func TestFromMoment(t *testing.T) {
 	t.Run("from time.Time", func(t *testing.T) {
 		// Test converting from standard time.Time
 		stdTime := time.Date(2024, time.January, 15, 12, 0, 0, 0, time.UTC)
-		utcTime := Convert(stdTime)
+		utcTime := FromMoment(stdTime)
 
 		// Verify the conversion
 		if !utcTime.UTC().Equal(stdTime) {
-			t.Errorf("Convert(time.Time) = %v, want %v", utcTime.UTC(), stdTime)
+			t.Errorf("FromMoment(time.Time) = %v, want %v", utcTime.UTC(), stdTime)
 		}
 
 		// Verify formatting shows UTC
@@ -103,12 +103,12 @@ func TestConvert(t *testing.T) {
 		estTime := est.Date(2024, time.January, 15, 12, 0, 0, 0)
 
 		// Convert to UTC
-		utcTime := Convert(estTime)
+		utcTime := FromMoment(estTime)
 
 		// 12:00 EST = 17:00 UTC in winter
 		expected := time.Date(2024, time.January, 15, 17, 0, 0, 0, time.UTC)
 		if !utcTime.UTC().Equal(expected) {
-			t.Errorf("Convert(EST) = %v, want %v", utcTime.UTC(), expected)
+			t.Errorf("FromMoment(EST) = %v, want %v", utcTime.UTC(), expected)
 		}
 
 		// Verify it displays as UTC
@@ -123,12 +123,12 @@ func TestConvert(t *testing.T) {
 		pstTime := pst.Date(2024, time.January, 15, 12, 0, 0, 0)
 
 		// Convert to UTC
-		utcTime := Convert(pstTime)
+		utcTime := FromMoment(pstTime)
 
 		// 12:00 PST = 20:00 UTC in winter
 		expected := time.Date(2024, time.January, 15, 20, 0, 0, 0, time.UTC)
 		if !utcTime.UTC().Equal(expected) {
-			t.Errorf("Convert(PST) = %v, want %v", utcTime.UTC(), expected)
+			t.Errorf("FromMoment(PST) = %v, want %v", utcTime.UTC(), expected)
 		}
 
 		// Verify it displays as UTC
@@ -145,8 +145,8 @@ func TestConvert(t *testing.T) {
 		utcTime := Date(2024, time.January, 15, 17, 0, 0, 0)    // EST + 5 hours
 
 		// Convert all to UTC
-		utcFromEST := Convert(estTime)
-		utcFromPST := Convert(pstTime)
+		utcFromEST := FromMoment(estTime)
+		utcFromPST := FromMoment(pstTime)
 
 		// All should be equal
 		if !utcFromEST.UTC().Equal(utcTime.UTC()) {

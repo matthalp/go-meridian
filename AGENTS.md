@@ -22,7 +22,7 @@ This is a **distributable library** intended for consumption by other Go project
 - Package name conveys timezone, type is always `Timezone`
 
 ### 3. Explicit Conversions
-- Timezone conversions must be explicit: `est.Convert(pacificTime)`
+- Timezone conversions must be explicit: `est.FromMoment(pacificTime)`
 - Conversions use the `Moment` interface, supporting both `time.Time` and `meridian.Time[TZ]`
 - This makes timezone handling visible in code review
 - No silent timezone changes or data loss
@@ -178,22 +178,22 @@ microTime := est.UnixMicro(1705320000000000)  // microseconds
 
 // From standard time.Time
 stdTime := time.Now()
-typed := utc.Convert(stdTime)  // Convert using Moment interface
+typed := utc.FromMoment(stdTime)  // Convert using Moment interface
 ```
 
 **Note**: `ParseInLocation` from the `time` package is not needed in timezone packages because the location is already determined by the package (e.g., `utc.Parse` always parses in UTC, `est.Parse` in EST, `pst.Parse` in PST).
 
 ### Converting Between Timezones
 ```go
-// Using timezone package Convert functions
+// Using timezone package FromMoment functions
 eastern := est.Now()
-pacific := pst.Convert(eastern)  // Explicit conversion
-utcTime := utc.Convert(eastern)  // To UTC for storage
+pacific := pst.FromMoment(eastern)  // Explicit conversion
+utcTime := utc.FromMoment(eastern)  // To UTC for storage
 
 // Convert from time.Time
 stdTime := time.Now()
-utcTyped := utc.Convert(stdTime)
-estTyped := est.Convert(stdTime)
+utcTyped := utc.FromMoment(stdTime)
+estTyped := est.FromMoment(stdTime)
 
 // All conversions preserve the moment in time
 fmt.Println(eastern.UTC().Equal(pacific.UTC()))  // true
@@ -263,12 +263,12 @@ func GetUTC[TZ Timezone](t Time[TZ]) time.Time {
 ```go
 // Good: Explicit conversion to UTC type
 func GetUTC[TZ Timezone](t Time[TZ]) utc.Time {
-    return utc.Convert(t)
+    return utc.FromMoment(t)
 }
 
 // Or use the Moment interface for flexibility
 func GetUTC(m Moment) utc.Time {
-    return utc.Convert(m)
+    return utc.FromMoment(m)
 }
 ```
 
@@ -392,9 +392,9 @@ func Date(year int, month time.Month, day, hour, minute, sec, nsec int) Time {
     return meridian.Date[Timezone](year, month, day, hour, minute, sec, nsec)
 }
 
-// Convert converts any Moment to JST time.
-func Convert(m meridian.Moment) Time {
-    return meridian.FromMoment[Timezone](m)
+// FromMoment converts any Moment to JST time.
+func FromMoment(m meridian.Moment) Time {
+	return meridian.FromMoment[Timezone](m)
 }
 
 // Parse parses a formatted string and returns the time value it represents in JST.
@@ -433,7 +433,7 @@ func UnixMicro(usec int64) Time {
 - Location loaded once at init in a package variable for efficiency
 - `mustLoadLocation` helper panics early if timezone database is missing
 - Consistent comments and structure across all timezone packages
-- All factory methods (Now, Date, Parse, Unix, UnixMilli, UnixMicro, Convert) follow the same pattern
+- All factory methods (Now, Date, Parse, Unix, UnixMilli, UnixMicro, FromMoment) follow the same pattern
 
 ## Questions to Ask Before Committing
 
