@@ -13,4 +13,8 @@ timezones:
   - name: utc
     location: UTC
     description: Coordinated Universal Time
+  
+  - name: cet
+    location: Europe/Paris
+    description: Central European Time
 
