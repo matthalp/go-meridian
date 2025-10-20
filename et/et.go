@@ -1,31 +1,31 @@
 /*
-Package pst provides Pacific Standard Time timezone support for meridian.
+Package et provides Eastern Time timezone support for meridian.
 
-PST represents the America/Los_Angeles IANA timezone, which observes Pacific Standard Time (PST) and Pacific Daylight Time (PDT) depending on the time of year.
+ET represents the America/New_York IANA timezone, which observes Eastern Time depending on the time of year.
 
 # Usage
 
-Create PST times:
+Create ET times:
 
-	now := pst.Now()
-	event := pst.Date(2024, time.December, 25, 6, 0, 0, 0)
-	parsed, _ := pst.Parse(time.RFC3339, "2024-12-25T06:00:00-08:00")
+	now := et.Now()
+	specific := et.Date(2024, time.December, 25, 10, 30, 0, 0)
+	parsed, _ := et.Parse(time.RFC3339, "2024-12-25T10:30:00Z")
 
-Convert to PST from other timezones:
+Convert to ET from other timezones:
 
 	eastern := est.Now()
-	pacific := pst.FromMoment(eastern)
+	pacific := et.FromMoment(eastern)
 
 Convert from standard time.Time:
 
 	stdTime := time.Now()
-	typedTime := pst.FromMoment(stdTime)
+	typedTime := et.FromMoment(stdTime)
 
-The pst.Time type is an alias for meridian.Time[pst.Timezone], providing
-compile-time timezone safety. Functions that accept pst.Time can only receive
-times explicitly typed as Pacific Standard Time, preventing timezone confusion.
+The et.Time type is an alias for meridian.Time[et.Timezone], providing
+compile-time timezone safety. Functions that accept et.Time can only receive
+times explicitly typed as Eastern Time, preventing timezone confusion.
 */
-package pst
+package et
 
 import (
 	"fmt"
@@ -35,7 +35,7 @@ import (
 )
 
 // location is the IANA timezone location, loaded once at package initialization.
-var location = mustLoadLocation("America/Los_Angeles")
+var location = mustLoadLocation("America/New_York")
 
 // mustLoadLocation loads a timezone location or panics if it fails.
 // This should only fail if the system's timezone database is corrupted or missing.
@@ -47,7 +47,7 @@ func mustLoadLocation(name string) *time.Location {
 	return loc
 }
 
-// Timezone represents the Pacific Standard Time timezone.
+// Timezone represents the Eastern Time timezone.
 type Timezone struct{}
 
 // Location returns the IANA timezone location.
@@ -68,31 +68,31 @@ func Date(year int, month time.Month, day, hour, minute, sec, nsec int) Time {
 	return meridian.Date[Timezone](year, month, day, hour, minute, sec, nsec)
 }
 
-// FromMoment converts any Moment to PST time.
+// FromMoment converts any Moment to ET time.
 func FromMoment(m meridian.Moment) Time {
 	return meridian.FromMoment[Timezone](m)
 }
 
-// Parse parses a formatted string and returns the time value it represents in PST.
+// Parse parses a formatted string and returns the time value it represents in ET.
 // The layout defines the format by showing how the reference time would be displayed.
-// The time is parsed in the America/Los_Angeles location.
+// The time is parsed in the America/New_York location.
 func Parse(layout, value string) (Time, error) {
 	return meridian.Parse[Timezone](layout, value)
 }
 
-// Unix returns the PST time corresponding to the given Unix time,
+// Unix returns the ET time corresponding to the given Unix time,
 // sec seconds and nsec nanoseconds since January 1, 1970 UTC.
 func Unix(sec, nsec int64) Time {
 	return meridian.Unix[Timezone](sec, nsec)
 }
 
-// UnixMilli returns the PST time corresponding to the given Unix time,
+// UnixMilli returns the ET time corresponding to the given Unix time,
 // msec milliseconds since January 1, 1970 UTC.
 func UnixMilli(msec int64) Time {
 	return meridian.UnixMilli[Timezone](msec)
 }
 
-// UnixMicro returns the PST time corresponding to the given Unix time,
+// UnixMicro returns the ET time corresponding to the given Unix time,
 // usec microseconds since January 1, 1970 UTC.
 func UnixMicro(usec int64) Time {
 	return meridian.UnixMicro[Timezone](usec)

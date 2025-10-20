@@ -26,14 +26,14 @@ Time[TZ] is a time.Time wrapper where TZ is a timezone type parameter:
 		// Only UTC times can be passed, preventing timezone bugs.
 	}
 
-Different timezones are incompatible types. meridian.Time[est.EST] and
-meridian.Time[pst.PST] cannot be mixed without explicit conversion:
+Different timezones are incompatible types. meridian.Time[et.ET] and
+meridian.Time[pt.PT] cannot be mixed without explicit conversion:
 
-	func ProcessEST(t est.Time) {
+	func ProcessET(t et.Time) {
 		// ... do something ...
 	}
 
-	ProcessEST(pst.Now())  // Compile error: cannot use pst.Time as est.Time
+	ProcessET(pt.Now())  // Compile error: cannot use pt.Time as et.Time
 
 # Core Design
 
@@ -43,8 +43,8 @@ making timezone part of the type system rather than runtime data.
 Explicit Conversions: Converting between timezones requires explicit function calls
 using the FromMoment function, making timezone handling visible in code review:
 
-	eastern := est.Now()
-	pacific := pst.FromMoment(eastern)  // Explicit and reviewable
+	eastern := et.Now()
+	pacific := pt.FromMoment(eastern)  // Explicit and reviewable
 
 Moment Interface: Both time.Time and Time[TZ] implement the Moment interface,
 enabling seamless interoperability with existing code:
@@ -57,8 +57,8 @@ Internal UTC Storage: All times are stored as UTC internally, eliminating DST
 ambiguity and making database storage straightforward. The timezone is applied
 during display and component extraction operations.
 
-Per-Timezone Packages: Each timezone has its own package (est, pst, utc) with
-convenience functions like est.Now() and pst.Date(...), plus a Time alias
+Per-Timezone Packages: Each timezone has its own package (et, pt, utc) with
+convenience functions like et.Now() and pt.Date(...), plus a Time alias
 for meridian.Time[Timezone].
 
 # Philosophy
@@ -81,7 +81,7 @@ import (
 )
 
 // Version is the current version of the meridian package.
-const Version = "1.1.0"
+const Version = "2.0.0"
 
 // Timezone interface that all timezone types must implement.
 // Each timezone package defines its own Timezone type that satisfies this interface,

@@ -1,31 +1,31 @@
 /*
-Package est provides Eastern Standard Time timezone support for meridian.
+Package pt provides Pacific Time timezone support for meridian.
 
-EST represents the America/New_York IANA timezone, which observes Eastern Standard Time (EST) and Eastern Daylight Time (EDT) depending on the time of year.
+PT represents the America/Los_Angeles IANA timezone, which observes Pacific Time depending on the time of year.
 
 # Usage
 
-Create EST times:
+Create PT times:
 
-	now := est.Now()
-	meeting := est.Date(2024, time.December, 25, 9, 0, 0, 0)
-	parsed, _ := est.Parse(time.RFC3339, "2024-12-25T09:00:00-05:00")
+	now := pt.Now()
+	specific := pt.Date(2024, time.December, 25, 10, 30, 0, 0)
+	parsed, _ := pt.Parse(time.RFC3339, "2024-12-25T10:30:00Z")
 
-Convert to EST from other timezones:
+Convert to PT from other timezones:
 
-	pacific := pst.Now()
-	eastern := est.FromMoment(pacific)
+	eastern := est.Now()
+	pacific := pt.FromMoment(eastern)
 
 Convert from standard time.Time:
 
 	stdTime := time.Now()
-	typedTime := est.FromMoment(stdTime)
+	typedTime := pt.FromMoment(stdTime)
 
-The est.Time type is an alias for meridian.Time[est.Timezone], providing
-compile-time timezone safety. Functions that accept est.Time can only receive
-times explicitly typed as Eastern Standard Time, preventing timezone confusion.
+The pt.Time type is an alias for meridian.Time[pt.Timezone], providing
+compile-time timezone safety. Functions that accept pt.Time can only receive
+times explicitly typed as Pacific Time, preventing timezone confusion.
 */
-package est
+package pt
 
 import (
 	"fmt"
@@ -35,7 +35,7 @@ import (
 )
 
 // location is the IANA timezone location, loaded once at package initialization.
-var location = mustLoadLocation("America/New_York")
+var location = mustLoadLocation("America/Los_Angeles")
 
 // mustLoadLocation loads a timezone location or panics if it fails.
 // This should only fail if the system's timezone database is corrupted or missing.
@@ -47,7 +47,7 @@ func mustLoadLocation(name string) *time.Location {
 	return loc
 }
 
-// Timezone represents the Eastern Standard Time timezone.
+// Timezone represents the Pacific Time timezone.
 type Timezone struct{}
 
 // Location returns the IANA timezone location.
@@ -68,31 +68,31 @@ func Date(year int, month time.Month, day, hour, minute, sec, nsec int) Time {
 	return meridian.Date[Timezone](year, month, day, hour, minute, sec, nsec)
 }
 
-// FromMoment converts any Moment to EST time.
+// FromMoment converts any Moment to PT time.
 func FromMoment(m meridian.Moment) Time {
 	return meridian.FromMoment[Timezone](m)
 }
 
-// Parse parses a formatted string and returns the time value it represents in EST.
+// Parse parses a formatted string and returns the time value it represents in PT.
 // The layout defines the format by showing how the reference time would be displayed.
-// The time is parsed in the America/New_York location.
+// The time is parsed in the America/Los_Angeles location.
 func Parse(layout, value string) (Time, error) {
 	return meridian.Parse[Timezone](layout, value)
 }
 
-// Unix returns the EST time corresponding to the given Unix time,
+// Unix returns the PT time corresponding to the given Unix time,
 // sec seconds and nsec nanoseconds since January 1, 1970 UTC.
 func Unix(sec, nsec int64) Time {
 	return meridian.Unix[Timezone](sec, nsec)
 }
 
-// UnixMilli returns the EST time corresponding to the given Unix time,
+// UnixMilli returns the PT time corresponding to the given Unix time,
 // msec milliseconds since January 1, 1970 UTC.
 func UnixMilli(msec int64) Time {
 	return meridian.UnixMilli[Timezone](msec)
 }
 
-// UnixMicro returns the EST time corresponding to the given Unix time,
+// UnixMicro returns the PT time corresponding to the given Unix time,
 // usec microseconds since January 1, 1970 UTC.
 func UnixMicro(usec int64) Time {
 	return meridian.UnixMicro[Timezone](usec)

@@ -7,7 +7,7 @@ In Go's standard library, timezone information in time.Time is data, not type.
 This means timezone information can be silently lost, leading to bugs:
 
 	func SaveDeadline(t time.Time) {
-		// Is this UTC? EST? PST? The compiler can't help you.
+		// Is this UTC? ET? PT? The compiler can't help you.
 		// If someone passes the wrong timezone, it compiles fine but causes bugs.
 	}
 
@@ -18,8 +18,8 @@ Meridian makes timezone information immutable by encoding it directly into the t
 Meridian's Time[TZ] type carries timezone information as a type parameter:
 
 	import (
-		"github.com/matthalp/go-meridian/est"
-		"github.com/matthalp/go-meridian/pst"
+		"github.com/matthalp/go-meridian/et"
+		"github.com/matthalp/go-meridian/pt"
 		"github.com/matthalp/go-meridian/utc"
 	)
 
@@ -28,27 +28,27 @@ Meridian's Time[TZ] type carries timezone information as a type parameter:
 		// The compiler enforces timezone correctness.
 	}
 
-Different timezones are different types, so meridian.Time[est.EST] and
-meridian.Time[pst.PST] cannot be accidentally mixed:
+Different timezones are different types, so meridian.Time[et.ET] and
+meridian.Time[pt.PT] cannot be accidentally mixed:
 
-	func ProcessEST(t est.Time) {
+	func ProcessET(t et.Time) {
 		// ... do something ...
 	}
 
-	ProcessEST(pst.Now())  // Compile error: type mismatch!
+	ProcessET(pt.Now())  // Compile error: type mismatch!
 
 # Core Concepts
 
-Type-Safe Timezones: Each timezone is a distinct type. meridian.Time[est.EST]
-and meridian.Time[pst.PST] are as different as string and int.
+Type-Safe Timezones: Each timezone is a distinct type. meridian.Time[et.ET]
+and meridian.Time[pt.PT] are as different as string and int.
 
-Per-Timezone Packages: Each timezone has its own package (est, pst, utc, etc.)
-with convenience functions like est.Now() and pst.Date(...).
+Per-Timezone Packages: Each timezone has its own package (et, pt, utc, etc.)
+with convenience functions like et.Now() and pt.Date(...).
 
 Explicit Conversions: Converting between timezones requires explicit function calls:
 
-	eastern := est.Now()
-	pacific := pst.FromMoment(eastern)  // Explicit conversion
+	eastern := et.Now()
+	pacific := pt.FromMoment(eastern)  // Explicit conversion
 	utcTime := utc.FromMoment(eastern)  // Convert to UTC for storage
 
 The Moment Interface: Both time.Time and meridian.Time[TZ] implement Moment,
@@ -69,10 +69,10 @@ Create times in specific timezones:
 	now := utc.Now()
 
 	// Specific date/time
-	meeting := est.Date(2024, time.December, 25, 10, 30, 0, 0)
+	meeting := et.Date(2024, time.December, 25, 10, 30, 0, 0)
 
 	// Parse from string
-	parsed, err := pst.Parse(time.RFC3339, "2024-12-25T10:30:00-08:00")
+	parsed, err := pt.Parse(time.RFC3339, "2024-12-25T10:30:00-08:00")
 
 	// From time.Time
 	stdTime := time.Now()
@@ -80,8 +80,8 @@ Create times in specific timezones:
 
 Convert between timezones explicitly:
 
-	eastern := est.Date(2024, time.December, 25, 9, 0, 0, 0)
-	pacific := pst.FromMoment(eastern)  // Same moment, different timezone
+	eastern := et.Date(2024, time.December, 25, 9, 0, 0, 0)
+	pacific := pt.FromMoment(eastern)  // Same moment, different timezone
 	utcTime := utc.FromMoment(eastern)  // Convert to UTC
 
 Work with time.Time seamlessly:
@@ -92,8 +92,8 @@ Work with time.Time seamlessly:
 	}
 
 	processTime(time.Now())      // Works
-	processTime(est.Now())       // Works
-	processTime(pst.Now())       // Works
+	processTime(et.Now())       // Works
+	processTime(pt.Now())       // Works
 
 Write type-safe APIs:
 
@@ -111,8 +111,8 @@ Write type-safe APIs:
 
 The package includes these timezone packages:
   - utc: Coordinated Universal Time
-  - est: Eastern Standard Time (America/New_York)
-  - pst: Pacific Standard Time (America/Los_Angeles)
+  - et: Eastern Time (America/New_York)
+  - pt: Pacific Time (America/Los_Angeles)
 
 Additional timezones can be generated using the timezones.yaml configuration.
 More can be added with sufficient demand.
