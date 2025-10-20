@@ -80,9 +80,10 @@ formatted := t.Format(time.Kitchen) // Definitely UTC! ✅
 
 ## Available Timezone Packages
 
-- `github.com/matthalp/go-meridian/utc` - Coordinated Universal Time
+- `github.com/matthalp/go-meridian/cet` - Central European Time (Europe/Paris)
 - `github.com/matthalp/go-meridian/et` - Eastern Time (America/New_York)
 - `github.com/matthalp/go-meridian/pt` - Pacific Time (America/Los_Angeles)
+- `github.com/matthalp/go-meridian/utc` - Coordinated Universal Time
 
 Each package provides:
 - `Now()` - Get current time in that timezone
