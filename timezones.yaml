@@ -2,13 +2,13 @@
 # Add new timezones here and run `make generate` to create the packages
 
 timezones:
-  - name: est
+  - name: et
     location: America/New_York
-    description: Eastern Standard Time
+    description: Eastern Time
   
-  - name: pst
+  - name: pt
     location: America/Los_Angeles
-    description: Pacific Standard Time
+    description: Pacific Time
   
   - name: utc
     location: UTC

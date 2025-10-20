@@ -10,10 +10,10 @@ Meridian solves a fundamental problem: timezone information in `time.Time` is da
 
 ## Features
 
-- ✅ **Type-safe timezones**: `utc.Time` and `est.Time` are different types
+- ✅ **Type-safe timezones**: `utc.Time` and `et.Time` are different types
 - ✅ **Compiler-enforced correctness**: Prevents accidental timezone mixing
-- ✅ **Clean, ergonomic API**: `utc.Now()`, `est.Date(...)`, `pst.Time`
-- ✅ **Built-in timezone packages**: UTC, EST, PST included
+- ✅ **Clean, ergonomic API**: `utc.Now()`, `et.Date(...)`, `pt.Time`
+- ✅ **Built-in timezone packages**: UTC, ET, PT included
 - ✅ **Extensible**: Easy to add custom timezone packages
 - ✅ Full GitHub Actions CI/CD pipeline
 - ✅ Automated testing with coverage reports
@@ -38,7 +38,7 @@ import (
     "fmt"
     "time"
     
-    "github.com/matthalp/go-meridian/est"
+    "github.com/matthalp/go-meridian/et"
     "github.com/matthalp/go-meridian/utc"
 )
 
@@ -48,12 +48,12 @@ func main() {
     fmt.Println(now.Format(time.RFC3339))
     
     // Create a specific date/time
-    meeting := est.Date(2024, time.December, 25, 10, 30, 0, 0)
+    meeting := et.Date(2024, time.December, 25, 10, 30, 0, 0)
     fmt.Println(meeting.Format(time.Kitchen))
     
     // Type-safe function signatures
     storeInDatabase(utc.Now())  // ✅ Compiles
-    // storeInDatabase(est.Now()) // ❌ Won't compile!
+    // storeInDatabase(et.Now()) // ❌ Won't compile!
 }
 
 // Functions can require specific timezones
@@ -81,15 +81,15 @@ formatted := t.Format(time.Kitchen) // Definitely UTC! ✅
 ## Available Timezone Packages
 
 - `github.com/matthalp/go-meridian/utc` - Coordinated Universal Time
-- `github.com/matthalp/go-meridian/est` - Eastern Standard Time (America/New_York)
-- `github.com/matthalp/go-meridian/pst` - Pacific Standard Time (America/Los_Angeles)
+- `github.com/matthalp/go-meridian/et` - Eastern Time (America/New_York)
+- `github.com/matthalp/go-meridian/pt` - Pacific Time (America/Los_Angeles)
 
 Each package provides:
 - `Now()` - Get current time in that timezone
 - `Date()` - Create a specific date/time
 - `Parse()` - Parse a formatted string in that timezone
 - `Unix()`, `UnixMilli()`, `UnixMicro()` - Create from Unix timestamps
-- `Convert()` - Convert any time to that timezone
+- `FromMoment()` - Convert any time to that timezone
 - `Time` - Type alias for clean function signatures
 
 Note: `ParseInLocation` is not needed as timezone packages already have their location built-in.
@@ -100,16 +100,16 @@ Meridian provides seamless timezone conversion while preserving type safety:
 
 ```go
 // Convert between timezone types
-estTime := est.Date(2024, time.December, 25, 10, 30, 0, 0)
-utcTime := utc.Convert(estTime)  // Same moment, displayed as UTC
-pstTime := pst.Convert(estTime)  // Same moment, displayed as PST
+etTime := et.Date(2024, time.December, 25, 10, 30, 0, 0)
+utcTime := utc.FromMoment(etTime)  // Same moment, displayed as UTC
+ptTime := pt.FromMoment(etTime)  // Same moment, displayed as PT
 
 // Convert from standard time.Time
 stdTime := time.Now()
-typedTime := utc.Convert(stdTime)  // Now type-safe!
+typedTime := utc.FromMoment(stdTime)  // Now type-safe!
 
 // All conversions preserve the moment in time
-fmt.Println(estTime.UTC().Equal(utcTime.UTC()))  // true
+fmt.Println(etTime.UTC().Equal(utcTime.UTC()))  // true
 ```
 
 The `Moment` interface allows both `time.Time` and `meridian.Time[TZ]` to be used interchangeably for conversions, providing flexibility while maintaining type safety where it matters.
@@ -167,12 +167,12 @@ Coverage reports are automatically uploaded to Codecov for tracking test coverag
 ├── cmd/
 │   └── example/
 │       └── main.go         # Example usage program
-├── est/                    # Eastern Time timezone package
-│   ├── est.go
-│   └── est_test.go
-├── pst/                    # Pacific Time timezone package
-│   ├── pst.go
-│   └── pst_test.go
+├── et/                     # Eastern Time timezone package
+│   ├── et.go
+│   └── et_test.go
+├── pt/                     # Pacific Time timezone package
+│   ├── pt.go
+│   └── pt_test.go
 ├── utc/                    # UTC timezone package
 │   ├── utc.go
 │   └── utc_test.go
