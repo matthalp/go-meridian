@@ -130,19 +130,20 @@ func TestParse(t *testing.T) {
 	})
 
 	t.Run("timezone specific interpretation", func(t *testing.T) {
-		// Parse same clock time in PT
-		ptParsed, err := Parse("2006-01-02 15:04:05", "2024-01-15 12:00:00")
+		// Parse same clock time in PT during summer (July) to ensure DST offset
+		ptParsed, err := Parse("2006-01-02 15:04:05", "2024-07-15 12:00:00")
 		if err != nil {
 			t.Fatalf("Parse() error = %v", err)
 		}
 
-		// Same clock time parsed in UTC would be different
-		utcParsed, err := utc.Parse("2006-01-02 15:04:05", "2024-01-15 12:00:00")
+		// Same clock time parsed in UTC
+		utcParsed, err := utc.Parse("2006-01-02 15:04:05", "2024-07-15 12:00:00")
 		if err != nil {
 			t.Fatalf("utc.Parse() error = %v", err)
 		}
 
-		// They should represent different moments in time
+		// During summer, most timezones have DST offset from UTC, so they should represent different moments
+		// For timezones without DST (like some Asian/African zones), this may still pass if offset != 0
 		if ptParsed.UTC().Equal(utcParsed.UTC()) {
 			t.Error("PT and UTC parse of same clock time should be different moments")
 		}

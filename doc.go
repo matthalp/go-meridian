@@ -110,12 +110,22 @@ Write type-safe APIs:
 # Available Timezones
 
 The package includes these timezone packages:
-  - utc: Coordinated Universal Time
+  - aest: Australian Eastern Time (Australia/Sydney)
+  - brt: Brasília Time (America/Sao_Paulo)
+  - cet: Central European Time (Europe/Paris)
+  - cst: China Standard Time (Asia/Shanghai)
+  - ct: Central Time (America/Chicago)
   - et: Eastern Time (America/New_York)
+  - gmt: Greenwich Mean Time (Europe/London)
+  - hkt: Hong Kong Time (Asia/Hong_Kong)
+  - ist: India Standard Time (Asia/Kolkata)
+  - jst: Japan Standard Time (Asia/Tokyo)
+  - mt: Mountain Time (America/Denver)
   - pt: Pacific Time (America/Los_Angeles)
+  - sgt: Singapore Time (Asia/Singapore)
+  - utc: Coordinated Universal Time
 
 Additional timezones can be generated using the timezones.yaml configuration.
-More can be added with sufficient demand.
 
 # Installation
 

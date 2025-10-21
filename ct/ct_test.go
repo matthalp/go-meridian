@@ -1,4 +1,4 @@
-package cet
+package ct
 
 import (
 	"testing"
@@ -8,11 +8,11 @@ import (
 	"github.com/matthalp/go-meridian/utc"
 )
 
-func TestCETLocation(t *testing.T) {
+func TestCTLocation(t *testing.T) {
 	var tz Timezone
 	loc := tz.Location()
-	if loc.String() != "Europe/Paris" {
-		t.Errorf("Timezone.Location() = %v, want Europe/Paris", loc.String())
+	if loc.String() != "America/Chicago" {
+		t.Errorf("Timezone.Location() = %v, want America/Chicago", loc.String())
 	}
 }
 
@@ -33,10 +33,10 @@ func TestNow(t *testing.T) {
 }
 
 func TestDate(t *testing.T) {
-	// Create a time: Jan 15, 2024 at noon CET
+	// Create a time: Jan 15, 2024 at noon CT
 	tzTime := Date(2024, time.January, 15, 12, 0, 0, 0)
 
-	// Format should show the time in CET
+	// Format should show the time in CT
 	result := tzTime.Format("15:04 MST")
 
 	// January 15 is during winter, so should show standard time abbreviation
@@ -52,8 +52,8 @@ func contains(s, substr string) bool {
 }
 
 func TestDateWithOffset(t *testing.T) {
-	// Create a time in CET (UTC offset varies by timezone and DST)
-	// Noon CET should have corresponding UTC offset
+	// Create a time in CT (UTC offset varies by timezone and DST)
+	// Noon CT should have corresponding UTC offset
 	tzTime := Date(2024, time.January, 1, 12, 0, 0, 0)
 
 	// Parse the formatted time and convert to UTC to verify
@@ -63,10 +63,10 @@ func TestDateWithOffset(t *testing.T) {
 	}
 	utcTime := parsed.UTC()
 
-	// Verify that the hour in CET location is 12
+	// Verify that the hour in CT location is 12
 	locationTime := utcTime.In(location)
 	if locationTime.Hour() != 12 {
-		t.Errorf("Date() hour in CET = %v, want 12", locationTime.Hour())
+		t.Errorf("Date() hour in CT = %v, want 12", locationTime.Hour())
 	}
 }
 
@@ -74,11 +74,11 @@ func TestFromMoment(t *testing.T) {
 	t.Run("from time.Time", func(t *testing.T) {
 		// Test converting from standard time.Time in UTC
 		stdTime := time.Date(2024, time.January, 15, 17, 0, 0, 0, time.UTC)
-		cetTime := FromMoment(stdTime)
+		ctTime := FromMoment(stdTime)
 
 		// Verify the conversion - should represent same moment
-		if !cetTime.UTC().Equal(stdTime) {
-			t.Errorf("FromMoment(time.Time) UTC = %v, want %v", cetTime.UTC(), stdTime)
+		if !ctTime.UTC().Equal(stdTime) {
+			t.Errorf("FromMoment(time.Time) UTC = %v, want %v", ctTime.UTC(), stdTime)
 		}
 	})
 
@@ -86,11 +86,11 @@ func TestFromMoment(t *testing.T) {
 		// Create 17:00 UTC
 		utcTime := utc.Date(2024, time.January, 15, 17, 0, 0, 0)
 
-		// Convert to CET
-		cetTime := FromMoment(utcTime)
+		// Convert to CT
+		ctTime := FromMoment(utcTime)
 
 		// Verify same moment in time
-		if !cetTime.UTC().Equal(utcTime.UTC()) {
+		if !ctTime.UTC().Equal(utcTime.UTC()) {
 			t.Error("Converted time doesn't represent same moment")
 		}
 	})
@@ -99,17 +99,17 @@ func TestFromMoment(t *testing.T) {
 		// Create 9:00 PT
 		ptTime := pt.Date(2024, time.January, 15, 9, 0, 0, 0)
 
-		// Convert to CET
-		cetTime := FromMoment(ptTime)
+		// Convert to CT
+		ctTime := FromMoment(ptTime)
 
 		// Verify same moment in time
-		if !cetTime.UTC().Equal(ptTime.UTC()) {
+		if !ctTime.UTC().Equal(ptTime.UTC()) {
 			t.Error("Converted time doesn't represent same moment")
 		}
 	})
 
 	t.Run("round trip conversion", func(t *testing.T) {
-		// Create time in CET
+		// Create time in CT
 		original := Date(2024, time.January, 15, 14, 30, 0, 0)
 
 		// Convert to UTC and back
@@ -130,13 +130,13 @@ func TestFromMoment(t *testing.T) {
 
 func TestParse(t *testing.T) {
 	t.Run("RFC3339 format", func(t *testing.T) {
-		// Parse a time string without timezone, should be interpreted as CET
+		// Parse a time string without timezone, should be interpreted as CT
 		parsed, err := Parse("2006-01-02 15:04:05", "2024-01-15 12:00:00")
 		if err != nil {
 			t.Fatalf("Parse() error = %v", err)
 		}
 
-		// Should be interpreted as 12:00 CET
+		// Should be interpreted as 12:00 CT
 		expected := Date(2024, time.January, 15, 12, 0, 0, 0)
 		if parsed.Format(time.RFC3339) != expected.Format(time.RFC3339) {
 			t.Errorf("Parse() = %v, want %v", parsed.Format(time.RFC3339), expected.Format(time.RFC3339))
@@ -144,8 +144,8 @@ func TestParse(t *testing.T) {
 	})
 
 	t.Run("timezone specific interpretation", func(t *testing.T) {
-		// Parse same clock time in CET during summer (July) to ensure DST offset
-		cetParsed, err := Parse("2006-01-02 15:04:05", "2024-07-15 12:00:00")
+		// Parse same clock time in CT during summer (July) to ensure DST offset
+		ctParsed, err := Parse("2006-01-02 15:04:05", "2024-07-15 12:00:00")
 		if err != nil {
 			t.Fatalf("Parse() error = %v", err)
 		}
@@ -158,8 +158,8 @@ func TestParse(t *testing.T) {
 
 		// During summer, most timezones have DST offset from UTC, so they should represent different moments
 		// For timezones without DST (like some Asian/African zones), this may still pass if offset != 0
-		if cetParsed.UTC().Equal(utcParsed.UTC()) {
-			t.Error("CET and UTC parse of same clock time should be different moments")
+		if ctParsed.UTC().Equal(utcParsed.UTC()) {
+			t.Error("CT and UTC parse of same clock time should be different moments")
 		}
 	})
 
