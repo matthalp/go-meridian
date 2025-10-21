@@ -16,9 +16,9 @@ This is a **distributable library** intended for consumption by other Go project
 - The compiler prevents accidental timezone mixing or loss
 
 ### 2. Per-Timezone Packages
-- Each timezone lives in its own package: `est`, `pst`, `utc`, etc.
-- Timezone packages provide helper functions: `est.Now()`, `pst.Date(...)`, etc.
-- Type aliases enable clean signatures: `utc.Time`, `est.Time`, `pst.Time`
+- Each timezone lives in its own package: `aest`, `brt`, `cet`, `cst`, `ct`, `et`, `gmt`, `hkt`, `ist`, `jst`, `mt`, `pt`, `sgt`, `utc`, etc.
+- Timezone packages provide helper functions: `et.Now()`, `pt.Date(...)`, etc.
+- Type aliases enable clean signatures: `utc.Time`, `et.Time`, `pt.Time`
 - Package name conveys timezone, type is always `Timezone`
 
 ### 3. Explicit Conversions

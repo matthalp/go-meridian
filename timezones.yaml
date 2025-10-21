@@ -2,19 +2,59 @@
 # Add new timezones here and run `make generate` to create the packages
 
 timezones:
+  - name: aest
+    location: Australia/Sydney
+    description: Australian Eastern Time
+  
+  - name: brt
+    location: America/Sao_Paulo
+    description: Brasília Time
+  
+  - name: cet
+    location: Europe/Paris
+    description: Central European Time
+  
+  - name: cst
+    location: Asia/Shanghai
+    description: China Standard Time
+  
+  - name: ct
+    location: America/Chicago
+    description: Central Time
+  
   - name: et
     location: America/New_York
     description: Eastern Time
+  
+  - name: gmt
+    location: Europe/London
+    description: Greenwich Mean Time
+  
+  - name: hkt
+    location: Asia/Hong_Kong
+    description: Hong Kong Time
+  
+  - name: ist
+    location: Asia/Kolkata
+    description: India Standard Time
+  
+  - name: jst
+    location: Asia/Tokyo
+    description: Japan Standard Time
+  
+  - name: mt
+    location: America/Denver
+    description: Mountain Time
   
   - name: pt
     location: America/Los_Angeles
     description: Pacific Time
   
+  - name: sgt
+    location: Asia/Singapore
+    description: Singapore Time
+  
   - name: utc
     location: UTC
     description: Coordinated Universal Time
-  
-  - name: cet
-    location: Europe/Paris
-    description: Central European Time
 

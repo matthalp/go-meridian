@@ -13,7 +13,7 @@ Meridian solves a fundamental problem: timezone information in `time.Time` is da
 - ✅ **Type-safe timezones**: `utc.Time` and `et.Time` are different types
 - ✅ **Compiler-enforced correctness**: Prevents accidental timezone mixing
 - ✅ **Clean, ergonomic API**: `utc.Now()`, `et.Date(...)`, `pt.Time`
-- ✅ **Built-in timezone packages**: UTC, ET, PT included
+- ✅ **14 built-in timezone packages**: Covers major global business centers
 - ✅ **Extensible**: Easy to add custom timezone packages
 - ✅ Full GitHub Actions CI/CD pipeline
 - ✅ Automated testing with coverage reports
@@ -80,9 +80,19 @@ formatted := t.Format(time.Kitchen) // Definitely UTC! ✅
 
 ## Available Timezone Packages
 
+- `github.com/matthalp/go-meridian/aest` - Australian Eastern Time (Australia/Sydney)
+- `github.com/matthalp/go-meridian/brt` - Brasília Time (America/Sao_Paulo)
 - `github.com/matthalp/go-meridian/cet` - Central European Time (Europe/Paris)
+- `github.com/matthalp/go-meridian/cst` - China Standard Time (Asia/Shanghai)
+- `github.com/matthalp/go-meridian/ct` - Central Time (America/Chicago)
 - `github.com/matthalp/go-meridian/et` - Eastern Time (America/New_York)
+- `github.com/matthalp/go-meridian/gmt` - Greenwich Mean Time (Europe/London)
+- `github.com/matthalp/go-meridian/hkt` - Hong Kong Time (Asia/Hong_Kong)
+- `github.com/matthalp/go-meridian/ist` - India Standard Time (Asia/Kolkata)
+- `github.com/matthalp/go-meridian/jst` - Japan Standard Time (Asia/Tokyo)
+- `github.com/matthalp/go-meridian/mt` - Mountain Time (America/Denver)
 - `github.com/matthalp/go-meridian/pt` - Pacific Time (America/Los_Angeles)
+- `github.com/matthalp/go-meridian/sgt` - Singapore Time (Asia/Singapore)
 - `github.com/matthalp/go-meridian/utc` - Coordinated Universal Time
 
 Each package provides:
