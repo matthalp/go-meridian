@@ -1,60 +1,87 @@
 # Timezone definitions for go-meridian
 # Add new timezones here and run `make generate` to create the packages
+#
+# Note: All existing timezones have generate_at_root: true for backwards compatibility.
+# New timezones added in the future should omit this field or set it to false -
+# they will only be generated in the timezones/ directory.
 
 timezones:
   - name: aest
     location: Australia/Sydney
     description: Australian Eastern Time
+    generate_at_root: true  # Maintains backwards compatibility
   
   - name: brt
     location: America/Sao_Paulo
     description: Brasília Time
+    generate_at_root: true  # Maintains backwards compatibility
   
   - name: cet
     location: Europe/Paris
     description: Central European Time
+    generate_at_root: true  # Maintains backwards compatibility
   
   - name: cst
     location: Asia/Shanghai
     description: China Standard Time
+    generate_at_root: true  # Maintains backwards compatibility
   
   - name: ct
     location: America/Chicago
     description: Central Time
+    generate_at_root: true  # Maintains backwards compatibility
+  
+  - name: est
+    location: America/New_York
+    description: Eastern Standard Time
+    generate_at_root: true  # Maintains backwards compatibility
   
   - name: et
     location: America/New_York
     description: Eastern Time
+    generate_at_root: true  # Maintains backwards compatibility
   
   - name: gmt
     location: Europe/London
     description: Greenwich Mean Time
+    generate_at_root: true  # Maintains backwards compatibility
   
   - name: hkt
     location: Asia/Hong_Kong
     description: Hong Kong Time
+    generate_at_root: true  # Maintains backwards compatibility
   
   - name: ist
     location: Asia/Kolkata
     description: India Standard Time
+    generate_at_root: true  # Maintains backwards compatibility
   
   - name: jst
     location: Asia/Tokyo
     description: Japan Standard Time
+    generate_at_root: true  # Maintains backwards compatibility
   
   - name: mt
     location: America/Denver
     description: Mountain Time
+    generate_at_root: true  # Maintains backwards compatibility
   
   - name: pt
     location: America/Los_Angeles
     description: Pacific Time
+    generate_at_root: true  # Maintains backwards compatibility
+  
+  - name: pst
+    location: America/Los_Angeles
+    description: Pacific Standard Time
+    generate_at_root: true  # Maintains backwards compatibility
   
   - name: sgt
     location: Asia/Singapore
     description: Singapore Time
+    generate_at_root: true  # Maintains backwards compatibility
   
   - name: utc
     location: UTC
     description: Coordinated Universal Time
-
+    generate_at_root: true  # Maintains backwards compatibility
