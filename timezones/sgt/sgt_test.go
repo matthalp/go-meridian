@@ -1,4 +1,4 @@
-package est
+package sgt
 
 import (
 	"testing"
@@ -8,11 +8,11 @@ import (
 	"github.com/matthalp/go-meridian/utc"
 )
 
-func TestESTLocation(t *testing.T) {
+func TestSGTLocation(t *testing.T) {
 	var tz Timezone
 	loc := tz.Location()
-	if loc.String() != "America/New_York" {
-		t.Errorf("Timezone.Location() = %v, want America/New_York", loc.String())
+	if loc.String() != "Asia/Singapore" {
+		t.Errorf("Timezone.Location() = %v, want Asia/Singapore", loc.String())
 	}
 }
 
@@ -33,10 +33,10 @@ func TestNow(t *testing.T) {
 }
 
 func TestDate(t *testing.T) {
-	// Create a time: Jan 15, 2024 at noon EST
+	// Create a time: Jan 15, 2024 at noon SGT
 	tzTime := Date(2024, time.January, 15, 12, 0, 0, 0)
 
-	// Format should show the time in EST
+	// Format should show the time in SGT
 	result := tzTime.Format("15:04 MST")
 
 	// January 15 is during winter, so should show standard time abbreviation
@@ -52,8 +52,8 @@ func contains(s, substr string) bool {
 }
 
 func TestDateWithOffset(t *testing.T) {
-	// Create a time in EST (UTC offset varies by timezone and DST)
-	// Noon EST should have corresponding UTC offset
+	// Create a time in SGT (UTC offset varies by timezone and DST)
+	// Noon SGT should have corresponding UTC offset
 	tzTime := Date(2024, time.January, 1, 12, 0, 0, 0)
 
 	// Parse the formatted time and convert to UTC to verify
@@ -63,10 +63,10 @@ func TestDateWithOffset(t *testing.T) {
 	}
 	utcTime := parsed.UTC()
 
-	// Verify that the hour in EST location is 12
+	// Verify that the hour in SGT location is 12
 	locationTime := utcTime.In(location)
 	if locationTime.Hour() != 12 {
-		t.Errorf("Date() hour in EST = %v, want 12", locationTime.Hour())
+		t.Errorf("Date() hour in SGT = %v, want 12", locationTime.Hour())
 	}
 }
 
@@ -74,11 +74,11 @@ func TestFromMoment(t *testing.T) {
 	t.Run("from time.Time", func(t *testing.T) {
 		// Test converting from standard time.Time in UTC
 		stdTime := time.Date(2024, time.January, 15, 17, 0, 0, 0, time.UTC)
-		estTime := FromMoment(stdTime)
+		sgtTime := FromMoment(stdTime)
 
 		// Verify the conversion - should represent same moment
-		if !estTime.UTC().Equal(stdTime) {
-			t.Errorf("FromMoment(time.Time) UTC = %v, want %v", estTime.UTC(), stdTime)
+		if !sgtTime.UTC().Equal(stdTime) {
+			t.Errorf("FromMoment(time.Time) UTC = %v, want %v", sgtTime.UTC(), stdTime)
 		}
 	})
 
@@ -86,11 +86,11 @@ func TestFromMoment(t *testing.T) {
 		// Create 17:00 UTC
 		utcTime := utc.Date(2024, time.January, 15, 17, 0, 0, 0)
 
-		// Convert to EST
-		estTime := FromMoment(utcTime)
+		// Convert to SGT
+		sgtTime := FromMoment(utcTime)
 
 		// Verify same moment in time
-		if !estTime.UTC().Equal(utcTime.UTC()) {
+		if !sgtTime.UTC().Equal(utcTime.UTC()) {
 			t.Error("Converted time doesn't represent same moment")
 		}
 	})
@@ -99,17 +99,17 @@ func TestFromMoment(t *testing.T) {
 		// Create 9:00 PT
 		ptTime := pt.Date(2024, time.January, 15, 9, 0, 0, 0)
 
-		// Convert to EST
-		estTime := FromMoment(ptTime)
+		// Convert to SGT
+		sgtTime := FromMoment(ptTime)
 
 		// Verify same moment in time
-		if !estTime.UTC().Equal(ptTime.UTC()) {
+		if !sgtTime.UTC().Equal(ptTime.UTC()) {
 			t.Error("Converted time doesn't represent same moment")
 		}
 	})
 
 	t.Run("round trip conversion", func(t *testing.T) {
-		// Create time in EST
+		// Create time in SGT
 		original := Date(2024, time.January, 15, 14, 30, 0, 0)
 
 		// Convert to UTC and back
@@ -130,13 +130,13 @@ func TestFromMoment(t *testing.T) {
 
 func TestParse(t *testing.T) {
 	t.Run("RFC3339 format", func(t *testing.T) {
-		// Parse a time string without timezone, should be interpreted as EST
+		// Parse a time string without timezone, should be interpreted as SGT
 		parsed, err := Parse("2006-01-02 15:04:05", "2024-01-15 12:00:00")
 		if err != nil {
 			t.Fatalf("Parse() error = %v", err)
 		}
 
-		// Should be interpreted as 12:00 EST
+		// Should be interpreted as 12:00 SGT
 		expected := Date(2024, time.January, 15, 12, 0, 0, 0)
 		if parsed.Format(time.RFC3339) != expected.Format(time.RFC3339) {
 			t.Errorf("Parse() = %v, want %v", parsed.Format(time.RFC3339), expected.Format(time.RFC3339))
@@ -144,8 +144,8 @@ func TestParse(t *testing.T) {
 	})
 
 	t.Run("timezone specific interpretation", func(t *testing.T) {
-		// Parse same clock time in EST during summer (July) to ensure DST offset
-		estParsed, err := Parse("2006-01-02 15:04:05", "2024-07-15 12:00:00")
+		// Parse same clock time in SGT during summer (July) to ensure DST offset
+		sgtParsed, err := Parse("2006-01-02 15:04:05", "2024-07-15 12:00:00")
 		if err != nil {
 			t.Fatalf("Parse() error = %v", err)
 		}
@@ -158,8 +158,8 @@ func TestParse(t *testing.T) {
 
 		// During summer, most timezones have DST offset from UTC, so they should represent different moments
 		// For timezones without DST (like some Asian/African zones), this may still pass if offset != 0
-		if estParsed.UTC().Equal(utcParsed.UTC()) {
-			t.Error("EST and UTC parse of same clock time should be different moments")
+		if sgtParsed.UTC().Equal(utcParsed.UTC()) {
+			t.Error("SGT and UTC parse of same clock time should be different moments")
 		}
 	})
 
