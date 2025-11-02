@@ -23,9 +23,10 @@ type Config struct {
 
 // TimezoneDef defines a single timezone.
 type TimezoneDef struct {
-	Name        string `yaml:"name"`
-	Location    string `yaml:"location"`
-	Description string `yaml:"description"`
+	Name           string `yaml:"name"`
+	Location       string `yaml:"location"`
+	Description    string `yaml:"description"`
+	GenerateAtRoot bool   `yaml:"generate_at_root"`
 }
 
 // TemplateData contains all variables needed for template rendering.
@@ -75,20 +76,38 @@ func generateTimezone(def TimezoneDef) error {
 		Abbrev:      strings.ToUpper(def.Name),
 	}
 
+	// Always generate in timezones/ directory
+	timezonesDir := filepath.Join("timezones", def.Name)
+	if err := generateInDirectory(timezonesDir, def.Name, data); err != nil {
+		return fmt.Errorf("failed to generate in timezones/%s: %w", def.Name, err)
+	}
+
+	// If GenerateAtRoot is true, also generate at root for backwards compatibility
+	if def.GenerateAtRoot {
+		rootDir := def.Name
+		if err := generateInDirectory(rootDir, def.Name, data); err != nil {
+			return fmt.Errorf("failed to generate in %s: %w", def.Name, err)
+		}
+	}
+
+	return nil
+}
+
+// generateInDirectory creates package and test files in the specified directory.
+func generateInDirectory(pkgDir, name string, data TemplateData) error {
 	// Create package directory
-	pkgDir := def.Name
 	if err := os.MkdirAll(pkgDir, 0o750); err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", pkgDir, err)
 	}
 
 	// Generate package file
-	pkgFile := filepath.Join(pkgDir, def.Name+".go")
+	pkgFile := filepath.Join(pkgDir, name+".go")
 	if err := generateFile(pkgFile, packageTemplate, data); err != nil {
 		return fmt.Errorf("failed to generate package file: %w", err)
 	}
 
 	// Generate test file
-	testFile := filepath.Join(pkgDir, def.Name+"_test.go")
+	testFile := filepath.Join(pkgDir, name+"_test.go")
 	if err := generateFile(testFile, testTemplate, data); err != nil {
 		return fmt.Errorf("failed to generate test file: %w", err)
 	}
