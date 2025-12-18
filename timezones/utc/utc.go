@@ -28,7 +28,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/matthalp/go-meridian"
+	"github.com/matthalp/go-meridian/v2"
 )
 
 // location is the IANA timezone location, loaded once at package initialization.

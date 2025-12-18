@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/matthalp/go-meridian/utc"
+	"github.com/matthalp/go-meridian/v2/timezones/utc"
 )
 
 func TestPTLocation(t *testing.T) {

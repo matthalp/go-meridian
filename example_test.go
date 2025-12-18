@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/matthalp/go-meridian"
-	"github.com/matthalp/go-meridian/et"
-	"github.com/matthalp/go-meridian/pt"
-	"github.com/matthalp/go-meridian/utc"
+	"github.com/matthalp/go-meridian/v2"
+	"github.com/matthalp/go-meridian/v2/timezones/et"
+	"github.com/matthalp/go-meridian/v2/timezones/pt"
+	"github.com/matthalp/go-meridian/v2/timezones/utc"
 )
 
 func ExampleNow() {
