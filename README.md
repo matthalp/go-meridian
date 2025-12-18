@@ -24,7 +24,7 @@ Meridian solves a fundamental problem: timezone information in `time.Time` is da
 Install the package in your Go project:
 
 ```bash
-go get github.com/matthalp/go-meridian
+go get github.com/matthalp/go-meridian/v2
 ```
 
 ## Quick Start
@@ -38,8 +38,8 @@ import (
     "fmt"
     "time"
     
-    "github.com/matthalp/go-meridian/et"
-    "github.com/matthalp/go-meridian/utc"
+    "github.com/matthalp/go-meridian/v2/et"
+    "github.com/matthalp/go-meridian/v2/utc"
 )
 
 func main() {
@@ -84,46 +84,33 @@ formatted := t.Format(time.Kitchen) // Definitely UTC! ✅
 
 For backwards compatibility, all existing timezones are available at both root and in the `timezones/` directory:
 
-**Root-level imports (backwards compatible):**
-- `github.com/matthalp/go-meridian/aest` - Australian Eastern Time (Australia/Sydney)
-- `github.com/matthalp/go-meridian/brt` - Brasília Time (America/Sao_Paulo)
-- `github.com/matthalp/go-meridian/cet` - Central European Time (Europe/Paris)
-- `github.com/matthalp/go-meridian/cst` - China Standard Time (Asia/Shanghai)
-- `github.com/matthalp/go-meridian/ct` - Central Time (America/Chicago)
-- `github.com/matthalp/go-meridian/est` - Eastern Standard Time (America/New_York)
-- `github.com/matthalp/go-meridian/et` - Eastern Time (America/New_York)
-- `github.com/matthalp/go-meridian/gmt` - Greenwich Mean Time (Europe/London)
-- `github.com/matthalp/go-meridian/hkt` - Hong Kong Time (Asia/Hong_Kong)
-- `github.com/matthalp/go-meridian/ist` - India Standard Time (Asia/Kolkata)
-- `github.com/matthalp/go-meridian/jst` - Japan Standard Time (Asia/Tokyo)
-- `github.com/matthalp/go-meridian/mt` - Mountain Time (America/Denver)
-- `github.com/matthalp/go-meridian/pt` - Pacific Time (America/Los_Angeles)
-- `github.com/matthalp/go-meridian/pst` - Pacific Standard Time (America/Los_Angeles)
-- `github.com/matthalp/go-meridian/sgt` - Singapore Time (Asia/Singapore)
-- `github.com/matthalp/go-meridian/utc` - Coordinated Universal Time
+**Root-level imports:**
+- `github.com/matthalp/go-meridian/v2/aest` - Australian Eastern Time (Australia/Sydney)
+- `github.com/matthalp/go-meridian/v2/brt` - Brasília Time (America/Sao_Paulo)
+- `github.com/matthalp/go-meridian/v2/cet` - Central European Time (Europe/Paris)
+- `github.com/matthalp/go-meridian/v2/cst` - China Standard Time (Asia/Shanghai)
+- `github.com/matthalp/go-meridian/v2/ct` - Central Time (America/Chicago)
+- `github.com/matthalp/go-meridian/v2/est` - Eastern Standard Time (America/New_York)
+- `github.com/matthalp/go-meridian/v2/et` - Eastern Time (America/New_York)
+- `github.com/matthalp/go-meridian/v2/gmt` - Greenwich Mean Time (Europe/London)
+- `github.com/matthalp/go-meridian/v2/hkt` - Hong Kong Time (Asia/Hong_Kong)
+- `github.com/matthalp/go-meridian/v2/ist` - India Standard Time (Asia/Kolkata)
+- `github.com/matthalp/go-meridian/v2/jst` - Japan Standard Time (Asia/Tokyo)
+- `github.com/matthalp/go-meridian/v2/mt` - Mountain Time (America/Denver)
+- `github.com/matthalp/go-meridian/v2/pt` - Pacific Time (America/Los_Angeles)
+- `github.com/matthalp/go-meridian/v2/pst` - Pacific Standard Time (America/Los_Angeles)
+- `github.com/matthalp/go-meridian/v2/sgt` - Singapore Time (Asia/Singapore)
+- `github.com/matthalp/go-meridian/v2/utc` - Coordinated Universal Time
 
-### New Approach (v2.0.0+)
+### Alternative: Timezones Directory (Future)
 
-Going forward, **all timezone packages are located in the `timezones/` directory**:
+In future versions, timezone packages may be organized in a `timezones/` directory:
 
-- `github.com/matthalp/go-meridian/timezones/aest` - Australian Eastern Time
-- `github.com/matthalp/go-meridian/timezones/brt` - Brasília Time
-- `github.com/matthalp/go-meridian/timezones/cet` - Central European Time
-- `github.com/matthalp/go-meridian/timezones/cst` - China Standard Time
-- `github.com/matthalp/go-meridian/timezones/ct` - Central Time
-- `github.com/matthalp/go-meridian/timezones/est` - Eastern Standard Time
-- `github.com/matthalp/go-meridian/timezones/et` - Eastern Time
-- `github.com/matthalp/go-meridian/timezones/gmt` - Greenwich Mean Time
-- `github.com/matthalp/go-meridian/timezones/hkt` - Hong Kong Time
-- `github.com/matthalp/go-meridian/timezones/ist` - India Standard Time
-- `github.com/matthalp/go-meridian/timezones/jst` - Japan Standard Time
-- `github.com/matthalp/go-meridian/timezones/mt` - Mountain Time
-- `github.com/matthalp/go-meridian/timezones/pt` - Pacific Time
-- `github.com/matthalp/go-meridian/timezones/pst` - Pacific Standard Time
-- `github.com/matthalp/go-meridian/timezones/sgt` - Singapore Time
-- `github.com/matthalp/go-meridian/timezones/utc` - Coordinated Universal Time
+- `github.com/matthalp/go-meridian/v2/timezones/aest`
+- `github.com/matthalp/go-meridian/v2/timezones/et`
+- etc.
 
-When adding new timezones, they will only be generated in the `timezones/` directory. The root-level packages are maintained for backwards compatibility with existing code.
+Currently, all timezone packages are available at the root level as shown above.
 
 ### Package API
 
@@ -177,7 +164,7 @@ As of v2.0.0, timezone packages are automatically generated from the `timezones.
 
 3. **Import and use**:
    ```go
-   import "github.com/matthalp/go-meridian/timezones/jst"
+   import "github.com/matthalp/go-meridian/v2/jst"
    
    now := jst.Now()
    ```
@@ -283,7 +270,7 @@ Coverage reports are automatically uploaded to Codecov for tracking test coverag
 
 ## API Documentation
 
-For detailed API documentation, see [pkg.go.dev](https://pkg.go.dev/github.com/matthalp/go-meridian) once the package is published.
+For detailed API documentation, see [pkg.go.dev](https://pkg.go.dev/github.com/matthalp/go-meridian/v2) once the package is published.
 
 ## Publishing a New Version
 
@@ -299,13 +286,13 @@ To make your package available for others to use:
 
 2. **Create a version tag**:
    ```bash
-   git tag v0.1.0
-   git push origin v0.1.0
+   git tag v2.0.0
+   git push origin v2.0.0
    ```
 
 3. **The package will be automatically available** via `go get`:
-   - Others can install with: `go get github.com/matthalp/go-meridian@v0.1.0`
-   - Documentation will appear on [pkg.go.dev](https://pkg.go.dev/github.com/matthalp/go-meridian) within minutes
+   - Others can install with: `go get github.com/matthalp/go-meridian/v2@v2.0.0`
+   - Documentation will appear on [pkg.go.dev](https://pkg.go.dev/github.com/matthalp/go-meridian/v2) within minutes
 
 4. **Update the version** in `meridian.go` when releasing new versions
 

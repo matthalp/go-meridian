@@ -1,4 +1,4 @@
-module github.com/matthalp/go-meridian
+module github.com/matthalp/go-meridian/v2
 
 go 1.20
 

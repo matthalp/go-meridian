@@ -18,9 +18,9 @@ Meridian makes timezone information immutable by encoding it directly into the t
 Meridian's Time[TZ] type carries timezone information as a type parameter:
 
 	import (
-		"github.com/matthalp/go-meridian/et"
-		"github.com/matthalp/go-meridian/pt"
-		"github.com/matthalp/go-meridian/utc"
+		"github.com/matthalp/go-meridian/v2/timezones/et"
+		"github.com/matthalp/go-meridian/v2/timezones/pt"
+		"github.com/matthalp/go-meridian/v2/timezones/utc"
 	)
 
 	func SaveDeadline(t utc.Time) {
@@ -129,7 +129,7 @@ Additional timezones can be generated using the timezones.yaml configuration.
 
 # Installation
 
-	go get github.com/matthalp/go-meridian
+	go get github.com/matthalp/go-meridian/v2
 
 # Design Philosophy
 

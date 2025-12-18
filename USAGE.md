@@ -7,7 +7,7 @@
 Install the meridian package and timezone subpackages:
 
 ```bash
-go get github.com/matthalp/go-meridian
+go get github.com/matthalp/go-meridian/v2
 ```
 
 ### Basic Usage - Timezone Packages
@@ -21,8 +21,8 @@ import (
     "fmt"
     "time"
     
-    "github.com/matthalp/go-meridian/est"
-    "github.com/matthalp/go-meridian/pst"
+    "github.com/matthalp/go-meridian/v2/est"
+    "github.com/matthalp/go-meridian/v2/pst"
     "github.com/matthalp/go-meridian/utc"
 )
 
@@ -51,8 +51,8 @@ package main
 
 import (
     "database/sql"
-    "github.com/matthalp/go-meridian/utc"
-    "github.com/matthalp/go-meridian/est"
+    "github.com/matthalp/go-meridian/v2/timezones/utc"
+    "github.com/matthalp/go-meridian/v2/timezones/est"
 )
 
 // Function only accepts UTC times
@@ -93,8 +93,8 @@ import (
     "fmt"
     "time"
     
-    "github.com/matthalp/go-meridian/est"
-    "github.com/matthalp/go-meridian/pst"
+    "github.com/matthalp/go-meridian/v2/est"
+    "github.com/matthalp/go-meridian/v2/pst"
     "github.com/matthalp/go-meridian/utc"
 )
 
@@ -125,8 +125,8 @@ package main
 
 import (
     "time"
-    "github.com/matthalp/go-meridian/utc"
-    "github.com/matthalp/go-meridian/est"
+    "github.com/matthalp/go-meridian/v2/timezones/utc"
+    "github.com/matthalp/go-meridian/v2/timezones/est"
 )
 
 func processStandardTime(stdTime time.Time) {
@@ -154,8 +154,8 @@ import (
     "fmt"
     "time"
     
-    "github.com/matthalp/go-meridian/est"
-    "github.com/matthalp/go-meridian/pst"
+    "github.com/matthalp/go-meridian/v2/est"
+    "github.com/matthalp/go-meridian/v2/pst"
     "github.com/matthalp/go-meridian/utc"
 )
 
@@ -242,7 +242,7 @@ package main
 
 import (
     "time"
-    "github.com/matthalp/go-meridian"
+    "github.com/matthalp/go-meridian/v2"
 )
 
 // Define a custom timezone
@@ -331,7 +331,7 @@ To add a new timezone package (e.g., `jst` for Japan Standard Time):
    import (
        "fmt"
        "time"
-       "github.com/matthalp/go-meridian"
+       "github.com/matthalp/go-meridian/v2"
    )
    
    var location = mustLoadLocation("Asia/Tokyo")

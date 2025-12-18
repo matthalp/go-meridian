@@ -23,10 +23,9 @@ type Config struct {
 
 // TimezoneDef defines a single timezone.
 type TimezoneDef struct {
-	Name           string `yaml:"name"`
-	Location       string `yaml:"location"`
-	Description    string `yaml:"description"`
-	GenerateAtRoot bool   `yaml:"generate_at_root"`
+	Name        string `yaml:"name"`
+	Location    string `yaml:"location"`
+	Description string `yaml:"description"`
 }
 
 // TemplateData contains all variables needed for template rendering.
@@ -76,18 +75,10 @@ func generateTimezone(def TimezoneDef) error {
 		Abbrev:      strings.ToUpper(def.Name),
 	}
 
-	// Always generate in timezones/ directory
+	// Generate in timezones/ directory
 	timezonesDir := filepath.Join("timezones", def.Name)
 	if err := generateInDirectory(timezonesDir, def.Name, data); err != nil {
 		return fmt.Errorf("failed to generate in timezones/%s: %w", def.Name, err)
-	}
-
-	// If GenerateAtRoot is true, also generate at root for backwards compatibility
-	if def.GenerateAtRoot {
-		rootDir := def.Name
-		if err := generateInDirectory(rootDir, def.Name, data); err != nil {
-			return fmt.Errorf("failed to generate in %s: %w", def.Name, err)
-		}
 	}
 
 	return nil
@@ -185,7 +176,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/matthalp/go-meridian"
+	"github.com/matthalp/go-meridian/v2"
 )
 
 // location is the IANA timezone location, loaded once at package initialization.
@@ -261,10 +252,10 @@ import (
 {{- if or (ne .PackageName "pt") (ne .PackageName "utc")}}
 
 {{- if ne .PackageName "pt"}}
-	"github.com/matthalp/go-meridian/pt"
+	"github.com/matthalp/go-meridian/v2/timezones/pt"
 {{- end}}
 {{- if ne .PackageName "utc"}}
-	"github.com/matthalp/go-meridian/utc"
+	"github.com/matthalp/go-meridian/v2/timezones/utc"
 {{- end}}
 {{- end}}
 )
