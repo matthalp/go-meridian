@@ -53,3 +53,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 - Nothing yet
+
+## [2.0.1] - 2026-06-07
+
+### Fixed
+- `Time[TZ].AddDate` now performs calendar arithmetic in the timezone's
+  location instead of UTC, preserving the wall-clock time across Daylight
+  Saving Time transitions (#29). Previously, adding a day always advanced the
+  underlying UTC instant by a literal 24 hours, which shifted the displayed
+  wall-clock time by an hour when crossing a DST boundary.

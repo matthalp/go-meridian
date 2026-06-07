@@ -497,6 +497,60 @@ func TestAddDate(t *testing.T) {
 	}
 }
 
+// TestAddDateAcrossDST verifies that AddDate performs calendar arithmetic in the
+// timezone's location, preserving the wall-clock time across DST transitions
+// rather than always adding a literal 24 hours per day. See issue #29.
+func TestAddDateAcrossDST(t *testing.T) {
+	tests := []struct {
+		name  string
+		start Time[PST]
+		days  int
+		// Expected wall-clock components in the timezone's location.
+		wantYear  int
+		wantMonth time.Month
+		wantDay   int
+		wantHour  int
+	}{
+		{
+			// "Spring forward": 2026-03-08 02:00 PST -> 03:00 PDT.
+			// Adding one calendar day to midnight should yield midnight the
+			// next day (a 23-hour span), not 01:00.
+			name:      "spring forward preserves wall clock",
+			start:     Date[PST](2026, time.March, 8, 0, 0, 0, 0),
+			days:      1,
+			wantYear:  2026,
+			wantMonth: time.March,
+			wantDay:   9,
+			wantHour:  0,
+		},
+		{
+			// "Fall back": 2026-11-01 02:00 PDT -> 01:00 PST.
+			// Adding one calendar day to midnight should yield midnight the
+			// next day (a 25-hour span), not 23:00 of the same day.
+			name:      "fall back preserves wall clock",
+			start:     Date[PST](2026, time.November, 1, 0, 0, 0, 0),
+			days:      1,
+			wantYear:  2026,
+			wantMonth: time.November,
+			wantDay:   2,
+			wantHour:  0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.start.AddDate(0, 0, tt.days)
+			year, month, day := result.Date()
+			hour := result.Hour()
+			if year != tt.wantYear || month != tt.wantMonth || day != tt.wantDay || hour != tt.wantHour {
+				t.Errorf("AddDate(0, 0, %d) = %04d-%02d-%02d %02d:00, want %04d-%02d-%02d %02d:00",
+					tt.days, year, month, day, hour,
+					tt.wantYear, tt.wantMonth, tt.wantDay, tt.wantHour)
+			}
+		})
+	}
+}
+
 func TestSub(t *testing.T) {
 	tests := []struct {
 		name     string
