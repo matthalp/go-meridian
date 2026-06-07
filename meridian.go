@@ -230,13 +230,6 @@ func (t Time[TZ]) Add(d time.Duration) Time[TZ] {
 
 // AddDate returns the time corresponding to adding the given number of years,
 // months, and days to t, preserving the timezone type.
-//
-// The calendar arithmetic is performed in the timezone's location rather than
-// in UTC, so the wall-clock time is preserved across Daylight Saving Time
-// transitions. For example, adding one day to midnight on the day before a DST
-// "spring forward" yields midnight the next day (a 23-hour span), not 1:00 AM
-// (a literal 24-hour span). This matches the behavior of time.Time.AddDate when
-// called on a time.Time that already carries the timezone's location.
 func (t Time[TZ]) AddDate(years, months, days int) Time[TZ] {
 	return Time[TZ]{utcTime: t.nativeTimeInLocation().AddDate(years, months, days).UTC()}
 }
