@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/matthalp/go-meridian/v2"
-	"github.com/matthalp/go-meridian/v2/timezones/et"
-	"github.com/matthalp/go-meridian/v2/timezones/pt"
-	"github.com/matthalp/go-meridian/v2/timezones/utc"
+	"github.com/matthalp/go-meridian/v3"
+	"github.com/matthalp/go-meridian/v3/timezones/et"
+	"github.com/matthalp/go-meridian/v3/timezones/pt"
+	"github.com/matthalp/go-meridian/v3/timezones/utc"
 )
 
 func main() {
@@ -47,11 +47,11 @@ func main() {
 	// Note: printUTCTime(et.Now()) would not compile due to type safety
 	fmt.Println()
 
-	// Example 5: Converting between timezones
+	// Example 5: Converting between timezones with the To method (Go 1.27)
 	fmt.Println("5. Timezone Conversion:")
 	etMeeting := et.Date(2024, time.December, 25, 10, 30, 0, 0)
-	utcMeeting := utc.FromMoment(etMeeting)
-	ptMeeting := pt.FromMoment(etMeeting)
+	utcMeeting := etMeeting.To[utc.Timezone]()
+	ptMeeting := etMeeting.To[pt.Timezone]()
 
 	fmt.Printf("   Meeting ET: %s\n", etMeeting.Format(time.Kitchen))
 	fmt.Printf("   Meeting UTC: %s\n", utcMeeting.Format(time.Kitchen))

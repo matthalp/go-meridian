@@ -49,6 +49,6 @@ install-tools:
 	@echo "Installing golangci-lint..."
 	@which golangci-lint > /dev/null || \
 		(echo "Installing golangci-lint..." && \
-		go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.54.2)
+		go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest)
 	@echo "Tools installed successfully!"
 

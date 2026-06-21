@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/matthalp/go-meridian/v2"
-	"github.com/matthalp/go-meridian/v2/timezones/et"
-	"github.com/matthalp/go-meridian/v2/timezones/pt"
-	"github.com/matthalp/go-meridian/v2/timezones/utc"
+	"github.com/matthalp/go-meridian/v3"
+	"github.com/matthalp/go-meridian/v3/timezones/et"
+	"github.com/matthalp/go-meridian/v3/timezones/pt"
+	"github.com/matthalp/go-meridian/v3/timezones/utc"
 )
 
 func ExampleNow() {
@@ -56,6 +56,30 @@ func ExampleFromMoment() {
 	fmt.Println("PT:", pacific.Format("15:04 MST"))
 	fmt.Println("UTC:", universal.Format("15:04 MST"))
 	fmt.Println("Same moment:", eastern.Equal(pacific) && eastern.Equal(universal))
+	// Output:
+	// ET: 09:00 EST
+	// PT: 06:00 PST
+	// UTC: 14:00 UTC
+	// Same moment: true
+}
+
+// ExampleTime_To demonstrates the fluent method form of timezone conversion,
+// enabled by Go 1.27 generic methods.
+func ExampleTime_To() {
+	// Create a time in Eastern timezone
+	eastern := et.Date(2024, time.December, 25, 9, 0, 0, 0)
+
+	// Convert with the To method instead of pt.FromMoment(eastern)
+	pacific := eastern.To[pt.Timezone]()
+	universal := eastern.To[utc.Timezone]()
+
+	// Conversions chain naturally
+	roundTrip := eastern.To[utc.Timezone]().To[pt.Timezone]()
+
+	fmt.Println("ET:", eastern.Format("15:04 MST"))
+	fmt.Println("PT:", pacific.Format("15:04 MST"))
+	fmt.Println("UTC:", universal.Format("15:04 MST"))
+	fmt.Println("Same moment:", eastern.Equal(pacific) && eastern.Equal(roundTrip))
 	// Output:
 	// ET: 09:00 EST
 	// PT: 06:00 PST
