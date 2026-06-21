@@ -22,7 +22,12 @@ This is a **distributable library** intended for consumption by other Go project
 - Package name conveys timezone, type is always `Timezone`
 
 ### 3. Explicit Conversions
-- Timezone conversions must be explicit: `est.FromMoment(pacificTime)`
+- Timezone conversions must be explicit. Two equivalent forms exist:
+  - Method form (preferred for `Time` → `Time`): `eastern.To[pt.Timezone]()`
+  - Package-function form (required for plain `time.Time`): `pt.FromMoment(eastern)`
+- The `To` method is a generic method (`func (t Time[TZ]) To[TZ2 Timezone]() Time[TZ2]`),
+  a Go 1.27 language feature. It cannot start from a `time.Time` (no method), so
+  `FromMoment` remains for that case.
 - Conversions use the `Moment` interface, supporting both `time.Time` and `meridian.Time[TZ]`
 - This makes timezone handling visible in code review
 - No silent timezone changes or data loss
@@ -153,8 +158,8 @@ import (
     // External dependencies (none currently)
     
     // Internal packages
-    "github.com/matthalp/go-meridian"
-    "github.com/matthalp/go-meridian/est"
+    "github.com/matthalp/go-meridian/v3"
+    "github.com/matthalp/go-meridian/v3/timezones/est"
 )
 ```
 
@@ -185,10 +190,14 @@ typed := utc.FromMoment(stdTime)  // Convert using Moment interface
 
 ### Converting Between Timezones
 ```go
-// Using timezone package FromMoment functions
+// Method form (Go 1.27 generic methods) — preferred for Time -> Time
 eastern := est.Now()
-pacific := pst.FromMoment(eastern)  // Explicit conversion
-utcTime := utc.FromMoment(eastern)  // To UTC for storage
+pacific := eastern.To[pst.Timezone]()  // Explicit conversion
+utcTime := eastern.To[utc.Timezone]()  // To UTC for storage
+
+// Equivalent package-function form (also works for plain time.Time)
+pacific = pst.FromMoment(eastern)
+utcTime = utc.FromMoment(eastern)
 
 // Convert from time.Time
 stdTime := time.Now()
@@ -319,8 +328,8 @@ if err != nil {
 ## CI/CD Pipeline
 
 The GitHub Actions workflow enforces:
-1. **Tests pass** on Go 1.20+ with race detection
-2. **Linting passes** with golangci-lint
+1. **Tests pass** on Go 1.27+ with race detection
+2. **Linting passes** with golangci-lint (v2 config schema)
 3. **go.mod is tidy**: `go mod tidy` produces no changes
 4. **Generated code is in sync**: Timezone packages match `timezones.yaml`
 5. **Coverage tracking**: Reports uploaded to Codecov

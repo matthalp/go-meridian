@@ -551,6 +551,44 @@ func TestAddDateAcrossDST(t *testing.T) {
 	}
 }
 
+// TestTo verifies the generic To method preserves the instant while changing
+// the timezone type, matching FromMoment and supporting chained conversions.
+func TestTo(t *testing.T) {
+	// 2024-01-15 17:00:00 UTC.
+	original := Date[UTC](2024, time.January, 15, 17, 0, 0, 0)
+
+	t.Run("preserves instant across type change", func(t *testing.T) {
+		eastern := original.To[EST]()
+		pacific := original.To[PST]()
+
+		if !eastern.UTC().Equal(original.UTC()) {
+			t.Errorf("To[EST]() UTC = %v, want %v", eastern.UTC(), original.UTC())
+		}
+		if !pacific.UTC().Equal(original.UTC()) {
+			t.Errorf("To[PST]() UTC = %v, want %v", pacific.UTC(), original.UTC())
+		}
+	})
+
+	t.Run("matches FromMoment", func(t *testing.T) {
+		if got, want := original.To[PST]().UTC(), FromMoment[PST](original).UTC(); !got.Equal(want) {
+			t.Errorf("To[PST]() = %v, FromMoment[PST]() = %v; want equal", got, want)
+		}
+	})
+
+	t.Run("chains and round-trips", func(t *testing.T) {
+		roundTrip := original.To[EST]().To[PST]().To[UTC]()
+		if !roundTrip.UTC().Equal(original.UTC()) {
+			t.Errorf("round-trip To chain UTC = %v, want %v", roundTrip.UTC(), original.UTC())
+		}
+	})
+
+	t.Run("converting to same type is identity", func(t *testing.T) {
+		if got := original.To[UTC](); !got.UTC().Equal(original.UTC()) {
+			t.Errorf("To[UTC]() UTC = %v, want %v", got.UTC(), original.UTC())
+		}
+	})
+}
+
 func TestSub(t *testing.T) {
 	tests := []struct {
 		name     string

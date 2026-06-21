@@ -176,7 +176,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/matthalp/go-meridian/v2"
+	"github.com/matthalp/go-meridian/v3"
 )
 
 // location is the IANA timezone location, loaded once at package initialization.
@@ -252,10 +252,10 @@ import (
 {{- if or (ne .PackageName "pt") (ne .PackageName "utc")}}
 
 {{- if ne .PackageName "pt"}}
-	"github.com/matthalp/go-meridian/v2/timezones/pt"
+	"github.com/matthalp/go-meridian/v3/timezones/pt"
 {{- end}}
 {{- if ne .PackageName "utc"}}
-	"github.com/matthalp/go-meridian/v2/timezones/utc"
+	"github.com/matthalp/go-meridian/v3/timezones/utc"
 {{- end}}
 {{- end}}
 )

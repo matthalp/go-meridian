@@ -7,8 +7,11 @@
 Install the meridian package and timezone subpackages:
 
 ```bash
-go get github.com/matthalp/go-meridian/v2
+go get github.com/matthalp/go-meridian/v3
 ```
+
+> **Requires Go 1.27 or later.** v3 uses generic methods (the `To` conversion
+> method), introduced in Go 1.27. On older toolchains, use v2.
 
 ### Basic Usage - Timezone Packages
 
@@ -21,9 +24,9 @@ import (
     "fmt"
     "time"
     
-    "github.com/matthalp/go-meridian/v2/est"
-    "github.com/matthalp/go-meridian/v2/pst"
-    "github.com/matthalp/go-meridian/utc"
+    "github.com/matthalp/go-meridian/v3/timezones/est"
+    "github.com/matthalp/go-meridian/v3/timezones/pst"
+    "github.com/matthalp/go-meridian/v3/timezones/utc"
 )
 
 func main() {
@@ -51,8 +54,8 @@ package main
 
 import (
     "database/sql"
-    "github.com/matthalp/go-meridian/v2/timezones/utc"
-    "github.com/matthalp/go-meridian/v2/timezones/est"
+    "github.com/matthalp/go-meridian/v3/timezones/utc"
+    "github.com/matthalp/go-meridian/v3/timezones/est"
 )
 
 // Function only accepts UTC times
@@ -84,7 +87,8 @@ func main() {
 
 ### Converting Between Timezones
 
-Meridian provides `Convert()` functions in each timezone package to convert between timezones:
+For `Time` → `Time` conversions, use the `To` method (a Go 1.27 generic method).
+It is the fluent equivalent of a package's `FromMoment` function and chains:
 
 ```go
 package main
@@ -93,18 +97,22 @@ import (
     "fmt"
     "time"
     
-    "github.com/matthalp/go-meridian/v2/est"
-    "github.com/matthalp/go-meridian/v2/pst"
-    "github.com/matthalp/go-meridian/utc"
+    "github.com/matthalp/go-meridian/v3/timezones/est"
+    "github.com/matthalp/go-meridian/v3/timezones/pst"
+    "github.com/matthalp/go-meridian/v3/timezones/utc"
 )
 
 func main() {
     // Create a time in EST
     meeting := est.Date(2024, time.December, 25, 10, 30, 0, 0)
     
-    // Convert to other timezones
-    utcMeeting := utc.Convert(meeting)
-    pstMeeting := pst.Convert(meeting)
+    // Convert to other timezones with the To method
+    utcMeeting := meeting.To[utc.Timezone]()
+    pstMeeting := meeting.To[pst.Timezone]()
+    
+    // Equivalent package-function form:
+    //   utcMeeting := utc.FromMoment(meeting)
+    //   pstMeeting := pst.FromMoment(meeting)
     
     fmt.Printf("EST: %s\n", meeting.Format(time.Kitchen))    // 10:30AM
     fmt.Printf("UTC: %s\n", utcMeeting.Format(time.Kitchen)) // 3:30PM
@@ -118,21 +126,22 @@ func main() {
 
 ### Converting from time.Time
 
-The `Moment` interface allows seamless conversion from standard `time.Time`:
+The `Moment` interface allows seamless conversion from standard `time.Time`.
+Use `FromMoment` for this — a plain `time.Time` has no `To` method:
 
 ```go
 package main
 
 import (
     "time"
-    "github.com/matthalp/go-meridian/v2/timezones/utc"
-    "github.com/matthalp/go-meridian/v2/timezones/est"
+    "github.com/matthalp/go-meridian/v3/timezones/utc"
+    "github.com/matthalp/go-meridian/v3/timezones/est"
 )
 
 func processStandardTime(stdTime time.Time) {
     // Convert to type-safe timezone types
-    utcTime := utc.Convert(stdTime)
-    estTime := est.Convert(stdTime)
+    utcTime := utc.FromMoment(stdTime)
+    estTime := est.FromMoment(stdTime)
     
     // Now you have type-safe times for your functions
     storeInDatabase(utcTime)     // Function requires utc.Time
@@ -154,9 +163,9 @@ import (
     "fmt"
     "time"
     
-    "github.com/matthalp/go-meridian/v2/est"
-    "github.com/matthalp/go-meridian/v2/pst"
-    "github.com/matthalp/go-meridian/utc"
+    "github.com/matthalp/go-meridian/v3/timezones/est"
+    "github.com/matthalp/go-meridian/v3/timezones/pst"
+    "github.com/matthalp/go-meridian/v3/timezones/utc"
 )
 
 func main() {
@@ -242,7 +251,7 @@ package main
 
 import (
     "time"
-    "github.com/matthalp/go-meridian/v2"
+    "github.com/matthalp/go-meridian/v3"
 )
 
 // Define a custom timezone
@@ -266,21 +275,19 @@ func main() {
 
 ```
 go-meridian/
-├── meridian.go          # Core generic types and functions
-├── meridian_test.go     # Core package tests
-├── example_test.go      # Testable examples (appear in docs)
-├── doc.go               # Package-level documentation
-├── cmd/example/         # Example program using the package
-├── utc/                 # UTC timezone package
-│   ├── utc.go
-│   └── utc_test.go
-├── est/                 # EST timezone package
-│   ├── est.go
-│   └── est_test.go
-├── pst/                 # PST timezone package
-│   ├── pst.go
-│   └── pst_test.go
-└── ...                  # CI/CD and config files
+├── meridian.go              # Core generic types and functions
+├── meridian_test.go         # Core package tests
+├── example_test.go          # Testable examples (appear in docs)
+├── doc.go                   # Package-level documentation
+├── timezones.yaml           # Timezone definitions (source of generated packages)
+├── cmd/example/             # Example program using the package
+├── cmd/generate-timezones/  # Code generator for timezone packages
+├── timezones/               # Generated timezone packages
+│   ├── utc/                 # UTC timezone package (utc.go, utc_test.go)
+│   ├── est/                 # EST timezone package
+│   ├── pst/                 # PST timezone package
+│   └── ...                  # et, pt, ct, mt, jst, ist, and more
+└── ...                      # CI/CD and config files
 ```
 
 ### Key Concepts
@@ -322,72 +329,34 @@ go-meridian/
 
 ### Adding New Timezone Packages
 
-To add a new timezone package (e.g., `jst` for Japan Standard Time):
+Timezone packages are **generated** from `timezones.yaml` — you do not write them
+by hand. To add a new timezone (e.g., `jst` for Japan Standard Time):
 
-1. Create a new directory `jst/` with `jst.go`:
-   ```go
-   package jst
-   
-   import (
-       "fmt"
-       "time"
-       "github.com/matthalp/go-meridian/v2"
-   )
-   
-   var location = mustLoadLocation("Asia/Tokyo")
-   
-   func mustLoadLocation(name string) *time.Location {
-       loc, err := time.LoadLocation(name)
-       if err != nil {
-           panic(fmt.Sprintf("failed to load timezone %s: %v", name, err))
-       }
-       return loc
-   }
-   
-   type Timezone struct{}
-   
-   func (Timezone) Location() *time.Location {
-       return location
-   }
-   
-   type Time = meridian.Time[Timezone]
-   
-   func Now() Time {
-       return meridian.Now[Timezone]()
-   }
-   
-   func Date(year int, month time.Month, day, hour, minute, sec, nsec int) Time {
-       return meridian.Date[Timezone](year, month, day, hour, minute, sec, nsec)
-   }
-   
-   func Convert(m meridian.Moment) Time {
-       return meridian.FromMoment[Timezone](m)
-   }
-   
-   func Parse(layout, value string) (Time, error) {
-       t, err := time.ParseInLocation(layout, value, location)
-       if err != nil {
-           return Time{}, err
-       }
-       return meridian.FromMoment[Timezone](t), nil
-   }
-   
-   func Unix(sec, nsec int64) Time {
-       return meridian.FromMoment[Timezone](time.Unix(sec, nsec))
-   }
-   
-   func UnixMilli(msec int64) Time {
-       return meridian.FromMoment[Timezone](time.UnixMilli(msec))
-   }
-   
-   func UnixMicro(usec int64) Time {
-       return meridian.FromMoment[Timezone](time.UnixMicro(usec))
-   }
+1. Add an entry to `timezones.yaml`:
+   ```yaml
+   timezones:
+     - name: jst
+       location: Asia/Tokyo
+       description: Japan Standard Time
    ```
 
-2. Add tests in `jst/jst_test.go` following the pattern in `utc/utc_test.go`
+2. Regenerate the packages:
+   ```bash
+   make generate
+   ```
+   This creates `timezones/jst/jst.go` and `timezones/jst/jst_test.go`, each
+   wired to the core `meridian` API (`Now`, `Date`, `FromMoment`, `Parse`,
+   `Unix`, `UnixMilli`, `UnixMicro`).
 
-3. Update documentation to include the new timezone package
+3. Verify:
+   ```bash
+   make test   # generated tests pass
+   make lint   # code quality
+   ```
+
+CI fails if the generated packages are out of sync with `timezones.yaml`, so
+always commit the regenerated files. To convert between any two generated
+timezones, use the `To` method (e.g. `jst.Now().To[utc.Timezone]()`).
 
 ### Publishing Updates
 

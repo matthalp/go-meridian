@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-06-20
+
+### Added
+- `Time[TZ].To[TZ2]()` generic method for fluent, type-safe timezone
+  conversion: `eastern.To[pt.Timezone]()` is the method form of
+  `pt.FromMoment(eastern)` and chains naturally
+  (`t.To[utc.Timezone]().To[pt.Timezone]()`). This relies on generic methods,
+  a language feature introduced in Go 1.27.
+
+### Changed
+- **BREAKING**: Module path is now `github.com/matthalp/go-meridian/v3`.
+- **BREAKING**: Minimum supported Go version is now 1.27 (was 1.20), required
+  by the generic `To` method.
+- Migrated the golangci-lint configuration to the v2 schema and updated CI to
+  build and test against Go 1.27.
+
+### Notes
+- `FromMoment` is unchanged and remains the way to convert from a plain
+  `time.Time` (which has no `To` method). The `To` method is additive sugar for
+  `meridian.Time[TZ]` → `meridian.Time[TZ2]` conversions.
+
 ## [2.0.0] - 2024-10-30
 
 ### Added

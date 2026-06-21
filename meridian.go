@@ -19,7 +19,7 @@ timezone, causing incorrect behavior.
 Meridian encodes timezone information directly in the type system using Go generics.
 Time[TZ] is a time.Time wrapper where TZ is a timezone type parameter:
 
-	import "github.com/matthalp/go-meridian/utc"
+	import "github.com/matthalp/go-meridian/v3/timezones/utc"
 
 	func ProcessDeadline(deadline utc.Time) {
 		// Now the timezone is guaranteed by the compiler!
@@ -40,11 +40,14 @@ meridian.Time[pt.PT] cannot be mixed without explicit conversion:
 Type-Safe Times: Time[TZ] carries timezone information as a type parameter,
 making timezone part of the type system rather than runtime data.
 
-Explicit Conversions: Converting between timezones requires explicit function calls
-using the FromMoment function, making timezone handling visible in code review:
+Explicit Conversions: Converting between timezones requires explicit, visible
+calls so timezone handling shows up in code review. Use the To method for the
+fluent method form, or a timezone package's FromMoment when starting from a
+plain time.Time:
 
 	eastern := et.Now()
-	pacific := pt.FromMoment(eastern)  // Explicit and reviewable
+	pacific := eastern.To[pt.PT]()     // method form (Go 1.27 generic methods)
+	pacific = pt.FromMoment(eastern)   // package-function form; also for time.Time
 
 Moment Interface: Both time.Time and Time[TZ] implement the Moment interface,
 enabling seamless interoperability with existing code:
@@ -81,7 +84,7 @@ import (
 )
 
 // Version is the current version of the meridian package.
-const Version = "2.0.1"
+const Version = "3.0.0"
 
 // Timezone interface that all timezone types must implement.
 // Each timezone package defines its own Timezone type that satisfies this interface,
@@ -217,6 +220,22 @@ func (t Time[TZ]) GoString() string {
 // both time.Time and other Time[TZ] types. The returned time.Time is always in UTC.
 func (t Time[TZ]) UTC() time.Time {
 	return t.utcTime
+}
+
+// To converts t to the same instant expressed in the timezone TZ2, preserving
+// the moment in time (UTC equality) while changing the timezone type.
+//
+// To is the method form of the package-level FromMoment function and reads
+// fluently at the call site:
+//
+//	eastern := et.Now()
+//	pacific := eastern.To[pt.PT]()  // same instant, Pacific type
+//
+// It relies on generic methods, a language feature added in Go 1.27. Because
+// To operates on an existing Time[TZ], it cannot start from a plain time.Time;
+// use a timezone package's FromMoment (e.g. utc.FromMoment(stdTime)) for that.
+func (t Time[TZ]) To[TZ2 Timezone]() Time[TZ2] {
+	return Time[TZ2]{utcTime: t.utcTime}
 }
 
 // Time Arithmetic & Manipulation

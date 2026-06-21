@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/matthalp/go-meridian/v2/timezones/pt"
-	"github.com/matthalp/go-meridian/v2/timezones/utc"
+	"github.com/matthalp/go-meridian/v3/timezones/pt"
+	"github.com/matthalp/go-meridian/v3/timezones/utc"
 )
 
 func TestGMTLocation(t *testing.T) {

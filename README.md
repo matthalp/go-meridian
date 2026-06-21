@@ -24,8 +24,13 @@ Meridian solves a fundamental problem: timezone information in `time.Time` is da
 Install the package in your Go project:
 
 ```bash
-go get github.com/matthalp/go-meridian/v2
+go get github.com/matthalp/go-meridian/v3
 ```
+
+> **Requires Go 1.27 or later.** v3 uses generic methods (the `To` conversion
+> method), a language feature introduced in Go 1.27. If you are on an older Go
+> toolchain, use [v2](https://pkg.go.dev/github.com/matthalp/go-meridian/v2),
+> which offers the same conversions through package-level `FromMoment` functions.
 
 ## Quick Start
 
@@ -38,8 +43,8 @@ import (
     "fmt"
     "time"
     
-    "github.com/matthalp/go-meridian/v2/et"
-    "github.com/matthalp/go-meridian/v2/utc"
+    "github.com/matthalp/go-meridian/v3/timezones/et"
+    "github.com/matthalp/go-meridian/v3/timezones/utc"
 )
 
 func main() {
@@ -85,29 +90,29 @@ formatted := t.Format(time.Kitchen) // Definitely UTC! ✅
 For backwards compatibility, all existing timezones are available at both root and in the `timezones/` directory:
 
 **Root-level imports:**
-- `github.com/matthalp/go-meridian/v2/aest` - Australian Eastern Time (Australia/Sydney)
-- `github.com/matthalp/go-meridian/v2/brt` - Brasília Time (America/Sao_Paulo)
-- `github.com/matthalp/go-meridian/v2/cet` - Central European Time (Europe/Paris)
-- `github.com/matthalp/go-meridian/v2/cst` - China Standard Time (Asia/Shanghai)
-- `github.com/matthalp/go-meridian/v2/ct` - Central Time (America/Chicago)
-- `github.com/matthalp/go-meridian/v2/est` - Eastern Standard Time (America/New_York)
-- `github.com/matthalp/go-meridian/v2/et` - Eastern Time (America/New_York)
-- `github.com/matthalp/go-meridian/v2/gmt` - Greenwich Mean Time (Europe/London)
-- `github.com/matthalp/go-meridian/v2/hkt` - Hong Kong Time (Asia/Hong_Kong)
-- `github.com/matthalp/go-meridian/v2/ist` - India Standard Time (Asia/Kolkata)
-- `github.com/matthalp/go-meridian/v2/jst` - Japan Standard Time (Asia/Tokyo)
-- `github.com/matthalp/go-meridian/v2/mt` - Mountain Time (America/Denver)
-- `github.com/matthalp/go-meridian/v2/pt` - Pacific Time (America/Los_Angeles)
-- `github.com/matthalp/go-meridian/v2/pst` - Pacific Standard Time (America/Los_Angeles)
-- `github.com/matthalp/go-meridian/v2/sgt` - Singapore Time (Asia/Singapore)
-- `github.com/matthalp/go-meridian/v2/utc` - Coordinated Universal Time
+- `github.com/matthalp/go-meridian/v3/aest` - Australian Eastern Time (Australia/Sydney)
+- `github.com/matthalp/go-meridian/v3/brt` - Brasília Time (America/Sao_Paulo)
+- `github.com/matthalp/go-meridian/v3/cet` - Central European Time (Europe/Paris)
+- `github.com/matthalp/go-meridian/v3/cst` - China Standard Time (Asia/Shanghai)
+- `github.com/matthalp/go-meridian/v3/ct` - Central Time (America/Chicago)
+- `github.com/matthalp/go-meridian/v3/est` - Eastern Standard Time (America/New_York)
+- `github.com/matthalp/go-meridian/v3/et` - Eastern Time (America/New_York)
+- `github.com/matthalp/go-meridian/v3/gmt` - Greenwich Mean Time (Europe/London)
+- `github.com/matthalp/go-meridian/v3/hkt` - Hong Kong Time (Asia/Hong_Kong)
+- `github.com/matthalp/go-meridian/v3/ist` - India Standard Time (Asia/Kolkata)
+- `github.com/matthalp/go-meridian/v3/jst` - Japan Standard Time (Asia/Tokyo)
+- `github.com/matthalp/go-meridian/v3/mt` - Mountain Time (America/Denver)
+- `github.com/matthalp/go-meridian/v3/pt` - Pacific Time (America/Los_Angeles)
+- `github.com/matthalp/go-meridian/v3/pst` - Pacific Standard Time (America/Los_Angeles)
+- `github.com/matthalp/go-meridian/v3/sgt` - Singapore Time (Asia/Singapore)
+- `github.com/matthalp/go-meridian/v3/utc` - Coordinated Universal Time
 
 ### Alternative: Timezones Directory (Future)
 
 In future versions, timezone packages may be organized in a `timezones/` directory:
 
-- `github.com/matthalp/go-meridian/v2/timezones/aest`
-- `github.com/matthalp/go-meridian/v2/timezones/et`
+- `github.com/matthalp/go-meridian/v3/timezones/aest`
+- `github.com/matthalp/go-meridian/v3/timezones/et`
 - etc.
 
 Currently, all timezone packages are available at the root level as shown above.
@@ -126,15 +131,20 @@ Note: `ParseInLocation` is not needed as timezone packages already have their lo
 
 ## Converting Between Timezones
 
-Meridian provides seamless timezone conversion while preserving type safety:
+Meridian provides seamless timezone conversion while preserving type safety.
+Use the `To` method (the fluent, method form) for `Time` → `Time` conversions:
 
 ```go
-// Convert between timezone types
+// Convert between timezone types with the To method (Go 1.27 generic methods)
 etTime := et.Date(2024, time.December, 25, 10, 30, 0, 0)
-utcTime := utc.FromMoment(etTime)  // Same moment, displayed as UTC
-ptTime := pt.FromMoment(etTime)  // Same moment, displayed as PT
+utcTime := etTime.To[utc.Timezone]()  // Same moment, displayed as UTC
+ptTime := etTime.To[pt.Timezone]()    // Same moment, displayed as PT
 
-// Convert from standard time.Time
+// Conversions chain naturally
+ptTime = etTime.To[utc.Timezone]().To[pt.Timezone]()
+
+// Convert from a standard time.Time using a package's FromMoment
+// (time.Time has no To method)
 stdTime := time.Now()
 typedTime := utc.FromMoment(stdTime)  // Now type-safe!
 
@@ -142,7 +152,10 @@ typedTime := utc.FromMoment(stdTime)  // Now type-safe!
 fmt.Println(etTime.UTC().Equal(utcTime.UTC()))  // true
 ```
 
-The `Moment` interface allows both `time.Time` and `meridian.Time[TZ]` to be used interchangeably for conversions, providing flexibility while maintaining type safety where it matters.
+Both forms are equivalent for `Time` → `Time` conversion — `etTime.To[pt.Timezone]()`
+is the method form of `pt.FromMoment(etTime)`. The `Moment` interface still allows
+both `time.Time` and `meridian.Time[TZ]` to be used interchangeably with `FromMoment`,
+providing flexibility while maintaining type safety where it matters.
 
 ## Adding Custom Timezones
 
@@ -164,7 +177,7 @@ As of v2.0.0, timezone packages are automatically generated from the `timezones.
 
 3. **Import and use**:
    ```go
-   import "github.com/matthalp/go-meridian/v2/jst"
+   import "github.com/matthalp/go-meridian/v3/jst"
    
    now := jst.Now()
    ```
@@ -270,7 +283,7 @@ Coverage reports are automatically uploaded to Codecov for tracking test coverag
 
 ## API Documentation
 
-For detailed API documentation, see [pkg.go.dev](https://pkg.go.dev/github.com/matthalp/go-meridian/v2) once the package is published.
+For detailed API documentation, see [pkg.go.dev](https://pkg.go.dev/github.com/matthalp/go-meridian/v3) once the package is published.
 
 ## Publishing a New Version
 
@@ -291,8 +304,8 @@ To make your package available for others to use:
    ```
 
 3. **The package will be automatically available** via `go get`:
-   - Others can install with: `go get github.com/matthalp/go-meridian/v2@v2.0.0`
-   - Documentation will appear on [pkg.go.dev](https://pkg.go.dev/github.com/matthalp/go-meridian/v2) within minutes
+   - Others can install with: `go get github.com/matthalp/go-meridian/v3@v2.0.0`
+   - Documentation will appear on [pkg.go.dev](https://pkg.go.dev/github.com/matthalp/go-meridian/v3) within minutes
 
 4. **Update the version** in `meridian.go` when releasing new versions
 

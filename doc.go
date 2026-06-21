@@ -18,9 +18,9 @@ Meridian makes timezone information immutable by encoding it directly into the t
 Meridian's Time[TZ] type carries timezone information as a type parameter:
 
 	import (
-		"github.com/matthalp/go-meridian/v2/timezones/et"
-		"github.com/matthalp/go-meridian/v2/timezones/pt"
-		"github.com/matthalp/go-meridian/v2/timezones/utc"
+		"github.com/matthalp/go-meridian/v3/timezones/et"
+		"github.com/matthalp/go-meridian/v3/timezones/pt"
+		"github.com/matthalp/go-meridian/v3/timezones/utc"
 	)
 
 	func SaveDeadline(t utc.Time) {
@@ -45,11 +45,14 @@ and meridian.Time[pt.PT] are as different as string and int.
 Per-Timezone Packages: Each timezone has its own package (et, pt, utc, etc.)
 with convenience functions like et.Now() and pt.Date(...).
 
-Explicit Conversions: Converting between timezones requires explicit function calls:
+Explicit Conversions: Converting between timezones requires explicit, visible
+calls. Use the To method (a generic method, available in Go 1.27+) for the
+fluent form, or a package's FromMoment when starting from a plain time.Time:
 
 	eastern := et.Now()
-	pacific := pt.FromMoment(eastern)  // Explicit conversion
-	utcTime := utc.FromMoment(eastern)  // Convert to UTC for storage
+	pacific := eastern.To[pt.Timezone]()   // fluent method form
+	utcTime := eastern.To[utc.Timezone]()  // convert to UTC for storage
+	pacific = pt.FromMoment(eastern)       // equivalent package-function form
 
 The Moment Interface: Both time.Time and meridian.Time[TZ] implement Moment,
 enabling seamless interoperability:
@@ -81,8 +84,9 @@ Create times in specific timezones:
 Convert between timezones explicitly:
 
 	eastern := et.Date(2024, time.December, 25, 9, 0, 0, 0)
-	pacific := pt.FromMoment(eastern)  // Same moment, different timezone
-	utcTime := utc.FromMoment(eastern)  // Convert to UTC
+	pacific := eastern.To[pt.Timezone]()   // Same moment, different timezone
+	utcTime := eastern.To[utc.Timezone]()  // Convert to UTC
+	pacific = pt.FromMoment(eastern)       // Or the package-function form
 
 Work with time.Time seamlessly:
 
@@ -127,9 +131,16 @@ The package includes these timezone packages:
 
 Additional timezones can be generated using the timezones.yaml configuration.
 
+# Requirements
+
+Meridian v3 requires Go 1.27 or later. The To method is a generic method, a
+language feature introduced in Go 1.27. Projects on older Go toolchains should
+use v2, which provides the same conversions through package-level FromMoment
+functions.
+
 # Installation
 
-	go get github.com/matthalp/go-meridian/v2
+	go get github.com/matthalp/go-meridian/v3
 
 # Design Philosophy
 
