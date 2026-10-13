@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main, 'release-*' ]
+    branches: [ main, 'release-v*' ]
   # Run on every PR regardless of base branch, so PRs into release or feature
   # branches are checked too.
   pull_request:
