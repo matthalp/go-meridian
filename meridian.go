@@ -479,8 +479,15 @@ func (t Time[TZ]) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary implements the encoding.BinaryUnmarshaler interface.
+// The binary form records the encoder's UTC offset, so the decoded time is
+// normalized to UTC to keep the internal representation consistent.
 func (t *Time[TZ]) UnmarshalBinary(data []byte) error {
-	return t.utcTime.UnmarshalBinary(data)
+	var stdTime time.Time
+	if err := stdTime.UnmarshalBinary(data); err != nil {
+		return err
+	}
+	t.utcTime = stdTime.UTC()
+	return nil
 }
 
 // AppendBinary appends the binary representation of t to b and returns the extended buffer.
@@ -498,8 +505,14 @@ func (t Time[TZ]) GobEncode() ([]byte, error) {
 }
 
 // GobDecode implements the gob.GobDecoder interface.
+// Like UnmarshalBinary, the decoded time is normalized to UTC.
 func (t *Time[TZ]) GobDecode(data []byte) error {
-	return t.utcTime.GobDecode(data)
+	var stdTime time.Time
+	if err := stdTime.GobDecode(data); err != nil {
+		return err
+	}
+	t.utcTime = stdTime.UTC()
+	return nil
 }
 
 // Database/SQL Support
