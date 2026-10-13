@@ -12,7 +12,7 @@ This is a **distributable library** intended for consumption by other Go project
 
 ### 1. Timezones as Types
 - `meridian.Time[TZ]` carries timezone information in its type parameter
-- `meridian.Time[est.EST]` and `meridian.Time[pst.PST]` are **different types**
+- `meridian.Time[et.Timezone]` and `meridian.Time[pt.Timezone]` are **different types**
 - The compiler prevents accidental timezone mixing or loss
 
 ### 2. Per-Timezone Packages
@@ -22,7 +22,7 @@ This is a **distributable library** intended for consumption by other Go project
 - Package name conveys timezone, type is always `Timezone`
 
 ### 3. Explicit Conversions
-- Timezone conversions must be explicit: `est.FromMoment(pacificTime)`
+- Timezone conversions must be explicit: `et.FromMoment(pacificTime)`
 - Conversions use the `Moment` interface, supporting both `time.Time` and `meridian.Time[TZ]`
 - This makes timezone handling visible in code review
 - No silent timezone changes or data loss
@@ -42,15 +42,15 @@ This is a **distributable library** intended for consumption by other Go project
 ├── example_test.go          # Testable examples (appear in godoc)
 ├── doc.go                   # Package-level documentation
 ├── cmd/example/main.go      # Example usage program
-├── est/                     # Eastern Time timezone package
-│   ├── est.go
-│   └── est_test.go
-├── pst/                     # Pacific Time timezone package
-│   ├── pst.go
-│   └── pst_test.go
-├── utc/                     # UTC timezone package
-│   ├── utc.go
-│   └── utc_test.go
+├── cmd/generate-timezones/  # Timezone package generator
+├── timezones.yaml           # Timezone definitions (input to the generator)
+├── timezones/               # Generated timezone packages, one per timezone
+│   ├── et/
+│   │   ├── et.go
+│   │   └── et_test.go
+│   ├── pt/
+│   ├── utc/
+│   └── ...
 ├── .golangci.yml            # Linter configuration
 └── Makefile                 # Development commands
 ```
@@ -126,14 +126,14 @@ func Add[TZ Timezone](t Time[TZ], d time.Duration) Time[TZ] {
 
 #### Timezone Package Functions
 ```go
-// Good: Timezone-specific helper (in est/est.go)
-func Now() meridian.Time[EST] {
-    return meridian.Now[EST]()
+// Good: Timezone-specific helper (in timezones/et/et.go)
+func Now() Time {
+    return meridian.Now[Timezone]()
 }
 
 // Good: Timezone-specific constructor
-func Date(year int, month time.Month, day, hour, min, sec, nsec int) meridian.Time[EST] {
-    return meridian.Date[EST](year, month, day, hour, min, sec, nsec)
+func Date(year int, month time.Month, day, hour, min, sec, nsec int) Time {
+    return meridian.Date[Timezone](year, month, day, hour, min, sec, nsec)
 }
 ```
 
@@ -153,8 +153,8 @@ import (
     // External dependencies (none currently)
     
     // Internal packages
-    "github.com/matthalp/go-meridian"
-    "github.com/matthalp/go-meridian/est"
+    "github.com/matthalp/go-meridian/v2"
+    "github.com/matthalp/go-meridian/v2/timezones/et"
 )
 ```
 
@@ -163,37 +163,37 @@ import (
 ### Creating Times
 ```go
 // From current time
-now := est.Now()
+now := et.Now()
 
 // From specific date/time
-meeting := pst.Date(2024, 3, 15, 9, 0, 0, 0)
+meeting := pt.Date(2024, 3, 15, 9, 0, 0, 0)
 
 // From formatted string (parsed in the timezone's location)
-parsed, _ := est.Parse(time.RFC3339, "2024-03-15T09:00:00-04:00")
+parsed, _ := et.Parse(time.RFC3339, "2024-03-15T09:00:00-04:00")
 
 // From Unix timestamps
 unixTime := utc.Unix(1705320000, 0)           // seconds + nanoseconds
-milliTime := pst.UnixMilli(1705320000000)     // milliseconds
-microTime := est.UnixMicro(1705320000000000)  // microseconds
+milliTime := pt.UnixMilli(1705320000000)     // milliseconds
+microTime := et.UnixMicro(1705320000000000)  // microseconds
 
 // From standard time.Time
 stdTime := time.Now()
 typed := utc.FromMoment(stdTime)  // Convert using Moment interface
 ```
 
-**Note**: `ParseInLocation` from the `time` package is not needed in timezone packages because the location is already determined by the package (e.g., `utc.Parse` always parses in UTC, `est.Parse` in EST, `pst.Parse` in PST).
+**Note**: `ParseInLocation` from the `time` package is not needed in timezone packages because the location is already determined by the package (e.g., `utc.Parse` always parses in UTC, `et.Parse` in Eastern Time, `pt.Parse` in Pacific Time).
 
 ### Converting Between Timezones
 ```go
 // Using timezone package FromMoment functions
-eastern := est.Now()
-pacific := pst.FromMoment(eastern)  // Explicit conversion
+eastern := et.Now()
+pacific := pt.FromMoment(eastern)  // Explicit conversion
 utcTime := utc.FromMoment(eastern)  // To UTC for storage
 
 // Convert from time.Time
 stdTime := time.Now()
 utcTyped := utc.FromMoment(stdTime)
-estTyped := est.FromMoment(stdTime)
+etTyped := et.FromMoment(stdTime)
 
 // All conversions preserve the moment in time
 fmt.Println(eastern.UTC().Equal(pacific.UTC()))  // true
@@ -214,7 +214,7 @@ func processTime(m Moment) {
 
 // Works with both types
 processTime(time.Now())
-processTime(est.Now())
+processTime(et.Now())
 ```
 
 ### Preserving Types Through Operations
@@ -281,7 +281,7 @@ func ScheduleJob(t time.Time) { ... }
 ### ✅ Do: Require explicit timezone types
 ```go
 // Good: Timezone is part of the contract
-func ScheduleJob(t Time[utc.UTC]) { ... }
+func ScheduleJob(t utc.Time) { ... }
 
 // Or generic if it works with any timezone
 func ScheduleJob[TZ Timezone](t Time[TZ]) { ... }
@@ -364,7 +364,7 @@ timezones:
 ```
 
 **Configuration fields:**
-- `name`: Package name (lowercase, will be the directory name: `jst/`)
+- `name`: Package name (lowercase, will be the directory name: `timezones/jst/`)
 - `location`: IANA timezone name (e.g., `Asia/Tokyo`, `America/Chicago`)
 - `description`: Human-readable timezone name for documentation
 
@@ -375,8 +375,8 @@ make generate
 ```
 
 This will create:
-- `jst/jst.go` - Package implementation with all timezone methods
-- `jst/jst_test.go` - Complete test suite
+- `timezones/jst/jst.go` - Package implementation with all timezone methods
+- `timezones/jst/jst_test.go` - Complete test suite
 
 ### Step 3: Verify
 
@@ -391,7 +391,7 @@ make lint       # Ensure code quality standards are met
 
 Each generated timezone package includes:
 
-**Package file (`{name}/{name}.go`):**
+**Package file (`timezones/{name}/{name}.go`):**
 - `type Timezone struct{}` - Timezone type
 - `type Time = meridian.Time[Timezone]` - Convenience alias
 - `func Location() *time.Location` - Returns IANA location
@@ -403,7 +403,7 @@ Each generated timezone package includes:
 - `func UnixMilli(msec) Time` - From Unix milliseconds
 - `func UnixMicro(usec) Time` - From Unix microseconds
 
-**Test file (`{name}/{name}_test.go`):**
+**Test file (`timezones/{name}/{name}_test.go`):**
 - Location verification test
 - Now() functionality test
 - Date() with timezone offset tests
