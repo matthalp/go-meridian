@@ -2431,6 +2431,71 @@ func TestGobDecode(t *testing.T) {
 	}
 }
 
+// TestBinaryDecodeNormalizesToUTC checks that decoding data produced by a
+// time.Time with a non-UTC offset still yields a UTC internal representation,
+// so UTC() returns a UTC time and == agrees with an equivalent value.
+func TestBinaryDecodeNormalizesToUTC(t *testing.T) {
+	t.Parallel()
+
+	foreign := time.Date(2024, time.June, 15, 14, 30, 45, 0, time.FixedZone("X", 5*60*60))
+	want := FromMoment[EST](foreign)
+
+	binaryData, err := foreign.MarshalBinary()
+	if err != nil {
+		t.Fatalf("MarshalBinary() error = %v", err)
+	}
+	gobData, err := foreign.GobEncode()
+	if err != nil {
+		t.Fatalf("GobEncode() error = %v", err)
+	}
+
+	tests := []struct {
+		name   string
+		decode func(*Time[EST]) error
+	}{
+		{"UnmarshalBinary", func(d *Time[EST]) error { return d.UnmarshalBinary(binaryData) }},
+		{"GobDecode", func(d *Time[EST]) error { return d.GobDecode(gobData) }},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var decoded Time[EST]
+			if err := tt.decode(&decoded); err != nil {
+				t.Fatalf("%s() error = %v", tt.name, err)
+			}
+			if loc := decoded.UTC().Location(); loc != time.UTC {
+				t.Errorf("UTC().Location() = %q, want UTC", loc)
+			}
+			if decoded != want {
+				t.Errorf("decoded = %#v, want %#v", decoded, want)
+			}
+		})
+	}
+}
+
+func TestBinaryDecodeInvalidData(t *testing.T) {
+	t.Parallel()
+
+	original := Date[UTC](2024, time.June, 15, 14, 30, 45, 0)
+	invalid := []byte{0xff}
+
+	decoded := original
+	if err := decoded.UnmarshalBinary(invalid); err == nil {
+		t.Error("UnmarshalBinary(invalid) error = nil, want error")
+	}
+	if decoded != original {
+		t.Errorf("UnmarshalBinary(invalid) changed value to %v", decoded)
+	}
+
+	decoded = original
+	if err := decoded.GobDecode(invalid); err == nil {
+		t.Error("GobDecode(invalid) error = nil, want error")
+	}
+	if decoded != original {
+		t.Errorf("GobDecode(invalid) changed value to %v", decoded)
+	}
+}
+
 func TestGobRoundTripInStruct(t *testing.T) {
 	type Event struct {
 		Name string
