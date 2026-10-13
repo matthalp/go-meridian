@@ -247,34 +247,31 @@ For detailed API documentation, see [pkg.go.dev](https://pkg.go.dev/github.com/m
 
 ## Publishing a New Version
 
-To make your package available for others to use:
+1. Merge a release-prep PR that bumps `Version` in `meridian.go` and moves the
+   `## [Unreleased]` entries in `CHANGELOG.md` under `## [X.Y.Z] - YYYY-MM-DD`.
+2. Check locally (optional; the workflow runs the same check):
+   `make release-check VERSION=vX.Y.Z`
+3. Run the **Release** workflow (Actions > Release > Run workflow) from `main`,
+   or from `release-vN` for a backport to an older major version, with the
+   version as input. It runs the tests, checks the version against `go.mod`,
+   `Version`, `CHANGELOG.md` and the API changes since the previous release
+   (via `gorelease`), then creates the tag and the GitHub release from the
+   changelog section.
 
-1. **Push to GitHub**: 
-   ```bash
-   git add .
-   git commit -m "Initial commit"
-   git remote add origin https://github.com/matthalp/go-meridian.git
-   git push -u origin main
-   ```
-
-2. **Create a version tag**:
-   ```bash
-   git tag v2.0.0
-   git push origin v2.0.0
-   ```
-
-3. **The package will be automatically available** via `go get`:
-   - Others can install with: `go get github.com/matthalp/go-meridian/v2@v2.0.0`
-   - Documentation will appear on [pkg.go.dev](https://pkg.go.dev/github.com/matthalp/go-meridian/v2) within minutes
-
-4. **Update the version** in `meridian.go` when releasing new versions
+Don't push version tags by hand. A tag can't be changed once the Go module
+proxy has fetched it, so it must be right the first time.
 
 ### Versioning
 
 This project follows [Semantic Versioning](https://semver.org/):
-- **MAJOR** version (v1.0.0) for incompatible API changes
-- **MINOR** version (v0.1.0) for new functionality in a backwards compatible manner
-- **PATCH** version (v0.0.1) for backwards compatible bug fixes
+- **MAJOR** version for incompatible API or behavior changes. A new major
+  version also changes the module path (`/v2`, `/v3`, ...).
+- **MINOR** version for backwards-compatible new functionality and
+  deprecations.
+- **PATCH** version for backwards-compatible bug fixes.
+
+The `go` directive in `go.mod` is the minimum supported Go version. CI tests
+that minimum and the Go releases currently supported by the Go team.
 
 ## Contributing
 

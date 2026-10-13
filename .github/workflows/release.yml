@@ -1,0 +1,69 @@
+name: Release
+
+# Releases are cut by running this workflow (Actions > Release > Run workflow)
+# from main or a release-vN branch. It verifies the release before creating
+# the tag, because a published Go module version cannot be changed or removed:
+# once the module proxy has fetched a tag, that content is permanent.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release, e.g. v2.1.0
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  VERSION: ${{ inputs.version }}
+  # Keep in sync with GORELEASE_VERSION in the Makefile.
+  GORELEASE_VERSION: v0.0.0-20261011100332-faecfb24eb49
+
+jobs:
+  release:
+    name: Release ${{ inputs.version }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch
+        run: |
+          case "$GITHUB_REF_NAME" in
+            main|release-v*) ;;
+            *) echo "::error::Run releases from main or a release-vN branch, not $GITHUB_REF_NAME"; exit 1 ;;
+          esac
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # tags are needed to find the previous release
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Run tests
+        run: go test -race ./...
+
+      - name: Install gorelease
+        run: go install "golang.org/x/exp/cmd/gorelease@${GORELEASE_VERSION}"
+
+      - name: Check release
+        run: python3 .github/scripts/check_release.py "$VERSION" --notes release-notes.md
+
+      - name: Create tag
+        run: |
+          git tag "$VERSION" "$GITHUB_SHA"
+          git push origin "refs/tags/$VERSION"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$VERSION" --verify-tag --title "$VERSION" --notes-file release-notes.md
+
+      - name: Ask the Go module proxy to fetch the release
+        run: GOPROXY=https://proxy.golang.org GOFLAGS=-mod=mod go list -m "$(go list -m)@$VERSION"

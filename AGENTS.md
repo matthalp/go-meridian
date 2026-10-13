@@ -240,14 +240,19 @@ func GetBusinessDayEnd[TZ Timezone](t meridian.Time[TZ]) meridian.Time[TZ] {
 4. Is the API intuitive for library consumers?
 
 ### Publishing Checklist
-1. Update `Version` constant in `meridian.go`
-2. Update `CHANGELOG.md` with changes
-3. Ensure all tests pass: `make test`
-4. Ensure linting passes: `make lint`
-5. Run coverage check: `make test-coverage`
-6. Create git tag: `git tag v0.x.x`
-7. Push tag: `git push origin v0.x.x`
-8. Documentation automatically appears on pkg.go.dev
+1. Merge a release-prep PR that bumps `Version` in `meridian.go` and moves the
+   `## [Unreleased]` entries in `CHANGELOG.md` under `## [X.Y.Z] - YYYY-MM-DD`.
+2. Check locally (optional; the workflow runs the same check):
+   `make release-check VERSION=vX.Y.Z`
+3. Run the **Release** workflow (Actions > Release > Run workflow) from `main`,
+   or from `release-vN` for a backport to an older major version, with the
+   version as input. It runs the tests, checks the version against `go.mod`,
+   `Version`, `CHANGELOG.md` and the API changes since the previous release
+   (via `gorelease`), then creates the tag and the GitHub release from the
+   changelog section.
+
+Don't push version tags by hand. A tag can't be changed once the Go module
+proxy has fetched it, so it must be right the first time.
 
 ## Common Pitfalls to Avoid
 

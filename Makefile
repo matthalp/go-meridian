@@ -1,4 +1,4 @@
-.PHONY: help test test-coverage lint build clean run-example install-tools generate
+.PHONY: help test test-coverage lint build clean run-example install-tools generate release-check
 
 # Keep in sync with the golangci-lint version in .github/workflows/ci.yml.
 GOLANGCI_LINT_VERSION := v2.14.0
@@ -14,6 +14,7 @@ help:
 	@echo "  make run-example    - Run the example program"
 	@echo "  make clean          - Clean build artifacts"
 	@echo "  make install-tools  - Install development tools"
+	@echo "  make release-check VERSION=vX.Y.Z - Check the tree is ready to release as VERSION"
 
 # Run tests
 test:
@@ -46,6 +47,15 @@ clean:
 # Generate timezone packages from timezones.yaml
 generate:
 	go run ./cmd/generate-timezones
+
+# Keep in sync with GORELEASE_VERSION in .github/workflows/release.yml.
+GORELEASE_VERSION := v0.0.0-20261011100332-faecfb24eb49
+
+# Check that the tree is ready to release as $(VERSION), as the Release workflow does.
+release-check:
+	@test -n "$(VERSION)" || (echo "usage: make release-check VERSION=vX.Y.Z" && exit 1)
+	go install golang.org/x/exp/cmd/gorelease@$(GORELEASE_VERSION)
+	python3 .github/scripts/check_release.py $(VERSION) --gorelease "$$(go env GOPATH)/bin/gorelease"
 
 # Install development tools
 install-tools:
