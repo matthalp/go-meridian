@@ -1,7 +1,7 @@
 /*
 Package aest provides Australian Eastern Time timezone support for meridian.
 
-AEST represents the Australia/Sydney IANA timezone, which observes Australian Eastern Time depending on the time of year.
+AEST represents the Australia/Sydney IANA timezone, which observes Australian Eastern Standard Time (AEST, UTC+10) and, from October to April, Australian Eastern Daylight Time (AEDT, UTC+11).
 
 # Usage
 
@@ -13,8 +13,8 @@ Create AEST times:
 
 Convert to AEST from other timezones:
 
-	eastern := est.Now()
-	pacific := aest.FromMoment(eastern)
+	eastern := et.Now()
+	converted := aest.FromMoment(eastern)
 
 Convert from standard time.Time:
 
@@ -38,11 +38,14 @@ import (
 var location = mustLoadLocation("Australia/Sydney")
 
 // mustLoadLocation loads a timezone location or panics if it fails.
-// This should only fail if the system's timezone database is corrupted or missing.
+// This only fails if the host has no usable timezone database, as in scratch
+// or distroless containers. Programs that run there should embed one by
+// importing the time/tzdata package from their main package.
 func mustLoadLocation(name string) *time.Location {
 	loc, err := time.LoadLocation(name)
 	if err != nil {
-		panic(fmt.Sprintf("failed to load timezone %s: %v", name, err))
+		panic(fmt.Sprintf("meridian/aest: failed to load timezone %s: %v "+
+			"(if this host has no timezone database, add import _ \"time/tzdata\" to your main package)", name, err))
 	}
 	return loc
 }

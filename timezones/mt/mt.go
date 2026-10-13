@@ -1,7 +1,7 @@
 /*
 Package mt provides Mountain Time timezone support for meridian.
 
-MT represents the America/Denver IANA timezone, which observes Mountain Time depending on the time of year.
+MT represents the America/Denver IANA timezone, which observes Mountain Standard Time (MST, UTC-7) and, in summer, Mountain Daylight Time (MDT, UTC-6). Arizona (America/Phoenix) does not observe daylight saving time and is not covered by this package.
 
 # Usage
 
@@ -13,8 +13,8 @@ Create MT times:
 
 Convert to MT from other timezones:
 
-	eastern := est.Now()
-	pacific := mt.FromMoment(eastern)
+	eastern := et.Now()
+	converted := mt.FromMoment(eastern)
 
 Convert from standard time.Time:
 
@@ -38,11 +38,14 @@ import (
 var location = mustLoadLocation("America/Denver")
 
 // mustLoadLocation loads a timezone location or panics if it fails.
-// This should only fail if the system's timezone database is corrupted or missing.
+// This only fails if the host has no usable timezone database, as in scratch
+// or distroless containers. Programs that run there should embed one by
+// importing the time/tzdata package from their main package.
 func mustLoadLocation(name string) *time.Location {
 	loc, err := time.LoadLocation(name)
 	if err != nil {
-		panic(fmt.Sprintf("failed to load timezone %s: %v", name, err))
+		panic(fmt.Sprintf("meridian/mt: failed to load timezone %s: %v "+
+			"(if this host has no timezone database, add import _ \"time/tzdata\" to your main package)", name, err))
 	}
 	return loc
 }

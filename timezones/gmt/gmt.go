@@ -1,7 +1,7 @@
 /*
 Package gmt provides Greenwich Mean Time timezone support for meridian.
 
-GMT represents the Europe/London IANA timezone, which observes Greenwich Mean Time depending on the time of year.
+GMT represents the Europe/London IANA timezone, which observes Greenwich Mean Time (GMT, UTC+0) in winter and British Summer Time (BST, UTC+1) in summer. It is UK civil time, not a fixed UTC+0 offset; use package utc for that.
 
 # Usage
 
@@ -13,8 +13,8 @@ Create GMT times:
 
 Convert to GMT from other timezones:
 
-	eastern := est.Now()
-	pacific := gmt.FromMoment(eastern)
+	eastern := et.Now()
+	converted := gmt.FromMoment(eastern)
 
 Convert from standard time.Time:
 
@@ -38,11 +38,14 @@ import (
 var location = mustLoadLocation("Europe/London")
 
 // mustLoadLocation loads a timezone location or panics if it fails.
-// This should only fail if the system's timezone database is corrupted or missing.
+// This only fails if the host has no usable timezone database, as in scratch
+// or distroless containers. Programs that run there should embed one by
+// importing the time/tzdata package from their main package.
 func mustLoadLocation(name string) *time.Location {
 	loc, err := time.LoadLocation(name)
 	if err != nil {
-		panic(fmt.Sprintf("failed to load timezone %s: %v", name, err))
+		panic(fmt.Sprintf("meridian/gmt: failed to load timezone %s: %v "+
+			"(if this host has no timezone database, add import _ \"time/tzdata\" to your main package)", name, err))
 	}
 	return loc
 }

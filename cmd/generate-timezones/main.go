@@ -26,6 +26,11 @@ type TimezoneDef struct {
 	Name        string `yaml:"name"`
 	Location    string `yaml:"location"`
 	Description string `yaml:"description"`
+	// Observes describes the offsets the location uses over the year, for
+	// the package doc (e.g. whether it observes daylight saving time).
+	Observes string `yaml:"observes"`
+	// Deprecated holds an optional deprecation message for the package.
+	Deprecated string `yaml:"deprecated"`
 }
 
 // TemplateData contains all variables needed for template rendering.
@@ -33,6 +38,8 @@ type TemplateData struct {
 	PackageName string
 	Location    string
 	Description string
+	Observes    string
+	Deprecated  string
 	Abbrev      string
 }
 
@@ -56,7 +63,8 @@ func run() error {
 	}
 
 	// Generate each timezone package
-	for _, tz := range config.Timezones {
+	for i := range config.Timezones {
+		tz := &config.Timezones[i]
 		if err := generateTimezone(tz); err != nil {
 			return fmt.Errorf("failed to generate %s: %w", tz.Name, err)
 		}
@@ -66,18 +74,20 @@ func run() error {
 	return nil
 }
 
-func generateTimezone(def TimezoneDef) error {
+func generateTimezone(def *TimezoneDef) error {
 	// Prepare template data
 	data := TemplateData{
 		PackageName: def.Name,
 		Location:    def.Location,
 		Description: def.Description,
+		Observes:    def.Observes,
+		Deprecated:  def.Deprecated,
 		Abbrev:      strings.ToUpper(def.Name),
 	}
 
 	// Generate in timezones/ directory
 	timezonesDir := filepath.Join("timezones", def.Name)
-	if err := generateInDirectory(timezonesDir, def.Name, data); err != nil {
+	if err := generateInDirectory(timezonesDir, def.Name, &data); err != nil {
 		return fmt.Errorf("failed to generate in timezones/%s: %w", def.Name, err)
 	}
 
@@ -85,7 +95,7 @@ func generateTimezone(def TimezoneDef) error {
 }
 
 // generateInDirectory creates package and test files in the specified directory.
-func generateInDirectory(pkgDir, name string, data TemplateData) error {
+func generateInDirectory(pkgDir, name string, data *TemplateData) error {
 	// Create package directory
 	if err := os.MkdirAll(pkgDir, 0o750); err != nil {
 		return fmt.Errorf("failed to create directory %s: %w", pkgDir, err)
@@ -106,7 +116,7 @@ func generateInDirectory(pkgDir, name string, data TemplateData) error {
 	return nil
 }
 
-func generateFile(filename string, tmpl *template.Template, data TemplateData) error {
+func generateFile(filename string, tmpl *template.Template, data *TemplateData) error {
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, data); err != nil {
 		return fmt.Errorf("failed to execute template: %w", err)
@@ -133,34 +143,29 @@ Package {{.PackageName}} provides {{.Description}} timezone support for meridian
 regulates clocks and time. It is timezone-neutral and does not observe daylight
 saving time.
 {{else}}
-{{.Abbrev}} represents the {{.Location}} IANA timezone, which observes {{.Description}}{{if eq .PackageName "est"}} (EST) and Eastern Daylight Time (EDT){{else if eq .PackageName "pst"}} (PST) and Pacific Daylight Time (PDT){{end}} depending on the time of year.
+{{.Abbrev}} represents the {{.Location}} IANA timezone, which observes {{if .Observes}}{{.Observes}}{{else}}{{.Description}}{{end}}.
+{{end}}{{if .Deprecated}}
+Deprecated: {{.Deprecated}}
 {{end}}
 # Usage
 
 Create {{.Abbrev}} times:
 
 	now := {{.PackageName}}.Now()
-{{if eq .PackageName "est"}}	meeting := {{.PackageName}}.Date(2024, time.December, 25, 9, 0, 0, 0)
-{{else if eq .PackageName "pst"}}	event := {{.PackageName}}.Date(2024, time.December, 25, 6, 0, 0, 0)
-{{else}}	specific := {{.PackageName}}.Date(2024, time.December, 25, 10, 30, 0, 0)
-{{end}}	parsed, _ := {{.PackageName}}.Parse(time.RFC3339, "2024-12-25T{{if eq .PackageName "est"}}09:00:00-05:00{{else if eq .PackageName "pst"}}06:00:00-08:00{{else}}10:30:00Z{{end}}")
-{{if eq .PackageName "utc"}}
+	specific := {{.PackageName}}.Date(2024, time.December, 25, 10, 30, 0, 0)
+	parsed, _ := {{.PackageName}}.Parse(time.RFC3339, "2024-12-25T10:30:00Z")
+
 Convert to {{.Abbrev}} from other timezones:
 
-	eastern := est.Now()
-	universal := {{.PackageName}}.FromMoment(eastern)
-
+{{if eq .PackageName "et"}}	pacific := pt.Now()
+	eastern := {{.PackageName}}.FromMoment(pacific)
+{{else}}	eastern := et.Now()
+	converted := {{.PackageName}}.FromMoment(eastern)
+{{end}}{{if eq .PackageName "utc"}}
 The {{.PackageName}}.Time type is an alias for meridian.Time[{{.PackageName}}.Timezone], providing
 compile-time timezone safety while maintaining compatibility with standard
 time.Time through the Moment interface.
 {{else}}
-Convert to {{.Abbrev}} from other timezones:
-
-{{if eq .PackageName "est"}}	pacific := pst.Now()
-	eastern := {{.PackageName}}.FromMoment(pacific)
-{{else}}	eastern := est.Now()
-	pacific := {{.PackageName}}.FromMoment(eastern)
-{{end}}
 Convert from standard time.Time:
 
 	stdTime := time.Now()
@@ -183,11 +188,14 @@ import (
 var location = mustLoadLocation("{{.Location}}")
 
 // mustLoadLocation loads a timezone location or panics if it fails.
-// This should only fail if the system's timezone database is corrupted or missing.
+// This only fails if the host has no usable timezone database, as in scratch
+// or distroless containers. Programs that run there should embed one by
+// importing the time/tzdata package from their main package.
 func mustLoadLocation(name string) *time.Location {
 	loc, err := time.LoadLocation(name)
 	if err != nil {
-		panic(fmt.Sprintf("failed to load timezone %s: %v", name, err))
+		panic(fmt.Sprintf("meridian/{{.PackageName}}: failed to load timezone %s: %v "+
+			"(if this host has no timezone database, add import _ \"time/tzdata\" to your main package)", name, err))
 	}
 	return loc
 }

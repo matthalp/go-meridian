@@ -27,6 +27,15 @@ Install the package in your Go project:
 go get github.com/matthalp/go-meridian/v2
 ```
 
+Timezone packages load their location from the host's timezone database when
+first imported, and panic if it is missing. On hosts without one (for example
+`scratch` or distroless container images), embed Go's copy by adding this to
+your `main` package:
+
+```go
+import _ "time/tzdata"
+```
+
 ## Quick Start
 
 Import and use timezone-specific packages:
@@ -87,14 +96,14 @@ All timezone packages live under `timezones/`:
 - `github.com/matthalp/go-meridian/v2/timezones/cet` - Central European Time (Europe/Paris)
 - `github.com/matthalp/go-meridian/v2/timezones/cst` - China Standard Time (Asia/Shanghai)
 - `github.com/matthalp/go-meridian/v2/timezones/ct` - Central Time (America/Chicago)
-- `github.com/matthalp/go-meridian/v2/timezones/est` - America/New_York; same zone as `et`
+- `github.com/matthalp/go-meridian/v2/timezones/est` - **Deprecated**, use `et` (same zone; follows daylight saving time despite the name). Removed in v3.
 - `github.com/matthalp/go-meridian/v2/timezones/et` - Eastern Time (America/New_York)
-- `github.com/matthalp/go-meridian/v2/timezones/gmt` - Europe/London
+- `github.com/matthalp/go-meridian/v2/timezones/gmt` - UK time (Europe/London): GMT in winter, BST (UTC+1) in summer. For a fixed UTC+0 offset, use `utc`
 - `github.com/matthalp/go-meridian/v2/timezones/hkt` - Hong Kong Time (Asia/Hong_Kong)
 - `github.com/matthalp/go-meridian/v2/timezones/ist` - India Standard Time (Asia/Kolkata)
 - `github.com/matthalp/go-meridian/v2/timezones/jst` - Japan Standard Time (Asia/Tokyo)
 - `github.com/matthalp/go-meridian/v2/timezones/mt` - Mountain Time (America/Denver)
-- `github.com/matthalp/go-meridian/v2/timezones/pst` - America/Los_Angeles; same zone as `pt`
+- `github.com/matthalp/go-meridian/v2/timezones/pst` - **Deprecated**, use `pt` (same zone; follows daylight saving time despite the name). Removed in v3.
 - `github.com/matthalp/go-meridian/v2/timezones/pt` - Pacific Time (America/Los_Angeles)
 - `github.com/matthalp/go-meridian/v2/timezones/sgt` - Singapore Time (Asia/Singapore)
 - `github.com/matthalp/go-meridian/v2/timezones/utc` - Coordinated Universal Time

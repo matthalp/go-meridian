@@ -367,6 +367,8 @@ timezones:
 - `name`: Package name (lowercase, will be the directory name: `timezones/jst/`)
 - `location`: IANA timezone name (e.g., `Asia/Tokyo`, `America/Chicago`)
 - `description`: Human-readable timezone name for documentation
+- `observes` (optional): The offsets the location uses over the year, completing the package doc sentence "which observes ...". Say whether it follows daylight saving time; don't let a standard-time name imply a fixed offset
+- `deprecated` (optional): Marks the package deprecated with this message (emitted as a `Deprecated:` paragraph, which staticcheck and gopls surface to users)
 
 ### Step 2: Generate the package
 
