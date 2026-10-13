@@ -217,6 +217,32 @@ fmt.Println(pstTime.UTC()) // 2024-01-15 20:00:00 +0000 UTC
 fmt.Println(utcTime.UTC()) // 2024-01-15 12:00:00 +0000 UTC
 ```
 
+### Database Columns
+
+`Time[TZ]` implements `driver.Valuer` and `sql.Scanner`. It writes a UTC `time.Time`
+and reads one back, so a scanned value is always UTC internally whatever zone the
+driver returned.
+
+A `Time[TZ]` has no NULL state. `Scan` returns `meridian.ErrScanNull` for a NULL
+column rather than reading it as the zero time, which matches `time.Time`. Declare a
+nullable column as `sql.Null[...]`:
+
+```go
+import (
+    "database/sql"
+    "github.com/matthalp/go-meridian/v3/timezones/utc"
+)
+
+type Account struct {
+    CreatedAt utc.Time           // NOT NULL
+    ClosedAt  sql.Null[utc.Time] // NULL until the account closes
+}
+```
+
+`sql.Null[utc.Time]` reads NULL as `Valid: false` and writes `Valid: false` back as
+NULL. A valid value goes through `utc.Time`'s own `Scan` and `Value`.
+A `*utc.Time` field works too, but `sql.Null` keeps the NULL case explicit.
+
 ### The Moment Interface
 
 Both `time.Time` and `meridian.Time[TZ]` implement the `Moment` interface:

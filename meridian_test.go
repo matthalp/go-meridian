@@ -2,9 +2,11 @@ package meridian
 
 import (
 	"bytes"
+	"database/sql"
 	"database/sql/driver"
 	"encoding/gob"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -2715,17 +2717,71 @@ func TestScanWithDifferentLocation(t *testing.T) {
 }
 
 func TestScanNil(t *testing.T) {
-	// Set to non-zero first
-	testTime := Date[UTC](2024, time.June, 15, 14, 30, 45, 0)
+	original := Date[UTC](2024, time.June, 15, 14, 30, 45, 0)
+	testTime := original
 
 	err := testTime.Scan(nil)
-	if err != nil {
-		t.Fatalf("Scan(nil) error = %v", err)
+	if !errors.Is(err, ErrScanNull) {
+		t.Fatalf("Scan(nil) error = %v, want ErrScanNull", err)
 	}
 
-	if !testTime.IsZero() {
-		t.Errorf("Scan(nil) should set to zero time, got %v", testTime)
+	if !testTime.Equal(original) {
+		t.Errorf("Scan(nil) changed the value to %v, want it left at %v", testTime, original)
 	}
+}
+
+func TestNullableColumnRoundTrip(t *testing.T) {
+	t.Run("NULL scans as invalid", func(t *testing.T) {
+		var n sql.Null[Time[UTC]]
+		if err := n.Scan(nil); err != nil {
+			t.Fatalf("Scan(nil) error = %v", err)
+		}
+		if n.Valid {
+			t.Errorf("Scan(nil) Valid = true, want false")
+		}
+	})
+
+	t.Run("a time scans as valid, stored as UTC", func(t *testing.T) {
+		estLoc, _ := time.LoadLocation("America/New_York")
+		source := time.Date(2024, time.January, 15, 7, 0, 0, 0, estLoc)
+
+		var n sql.Null[Time[UTC]]
+		if err := n.Scan(source); err != nil {
+			t.Fatalf("Scan() error = %v", err)
+		}
+		if !n.Valid {
+			t.Fatalf("Scan() Valid = false, want true")
+		}
+		if !n.V.UTC().Equal(source) {
+			t.Errorf("Scan() stored %v, want %v", n.V.UTC(), source.UTC())
+		}
+	})
+
+	t.Run("an invalid value writes NULL", func(t *testing.T) {
+		value, err := sql.Null[Time[UTC]]{}.Value()
+		if err != nil {
+			t.Fatalf("Value() error = %v", err)
+		}
+		if value != nil {
+			t.Errorf("Value() = %v, want nil", value)
+		}
+	})
+
+	t.Run("a valid value writes a UTC time.Time", func(t *testing.T) {
+		moment := Date[EST](2024, time.January, 15, 7, 0, 0, 0)
+
+		value, err := sql.Null[Time[EST]]{V: moment, Valid: true}.Value()
+		if err != nil {
+			t.Fatalf("Value() error = %v", err)
+		}
+		stdTime, ok := value.(time.Time)
+		if !ok {
+			t.Fatalf("Value() = %T, want time.Time", value)
+		}
+		if stdTime.Location() != time.UTC || !stdTime.Equal(moment.UTC()) {
+			t.Errorf("Value() = %v, want %v in UTC", stdTime, moment.UTC())
+		}
+	})
 }
 
 func TestScanInvalidType(t *testing.T) {

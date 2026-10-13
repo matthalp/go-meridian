@@ -13,8 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `pt.FromMoment(eastern)` and chains naturally
   (`t.To[utc.Timezone]().To[pt.Timezone]()`). This relies on generic methods,
   a language feature introduced in Go 1.27.
+- `ErrScanNull`, the error `Scan` returns for a SQL NULL.
 
 ### Changed
+- **BREAKING**: `Time[TZ].Scan(nil)` now returns `ErrScanNull` and leaves the value
+  unchanged. It used to set the zero time. That made a NULL column indistinguishable
+  from the zero time, and `Value` then wrote the zero time back where NULL had been.
+  `time.Time` refuses NULL the same way. Declare a nullable column as
+  `sql.Null[Time[TZ]]` (see USAGE.md, "Database Columns").
 - **BREAKING**: Module path is now `github.com/matthalp/go-meridian/v3`.
 - **BREAKING**: Minimum supported Go version is now 1.27 (was 1.20), required
   by the generic `To` method.

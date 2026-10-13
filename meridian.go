@@ -79,6 +79,7 @@ import (
 	"database/sql/driver"
 	"encoding"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 )
@@ -529,12 +530,20 @@ func (t Time[TZ]) Value() (driver.Value, error) {
 	return t.utcTime, nil
 }
 
+// ErrScanNull is returned by Scan when the column value is SQL NULL.
+//
+// A Time[TZ] has no NULL state, so a nullable column scans into
+// sql.Null[Time[TZ]] (or a *Time[TZ]) instead. Reading NULL as the zero time
+// would lose the distinction, and Value would then write the zero time back
+// where NULL was. This matches time.Time, which also refuses to scan NULL.
+var ErrScanNull = errors.New("meridian: cannot scan NULL into Time; use sql.Null[Time[TZ]] for a nullable column")
+
 // Scan implements the sql.Scanner interface for database/sql.
 // It accepts time.Time values and stores them as UTC internally.
+// A NULL value returns ErrScanNull and leaves t unchanged.
 func (t *Time[TZ]) Scan(value interface{}) error {
 	if value == nil {
-		t.utcTime = time.Time{}
-		return nil
+		return ErrScanNull
 	}
 
 	switch v := value.(type) {
