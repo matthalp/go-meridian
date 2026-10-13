@@ -8,7 +8,9 @@ Run from the repository root. Checks that:
   - its major version matches the module path in go.mod (/vN suffix)
   - the Version constant in meridian.go matches
   - CHANGELOG.md has a "## [X.Y.Z] - YYYY-MM-DD" section (written to
-    --notes, if given, for use as release notes)
+    --notes, if given and every check passes, for use as release notes;
+    keep that file outside the repository, since gorelease refuses to run
+    on a working tree with untracked files)
   - the bump is right for the API changes since the previous release of the
     same major version, according to gorelease. A change to the exported
     Version constant's value is ignored: gorelease reports any constant value
@@ -135,9 +137,6 @@ def main():
     notes = changelog_section(open("CHANGELOG.md").read(), bare)
     if notes is None:
         problems.append(f"CHANGELOG.md has no '## [{bare}] - YYYY-MM-DD' section")
-    elif args.notes:
-        with open(args.notes, "w") as f:
-            f.write(notes + "\n")
 
     base = previous_tag(version)
     if base is None:
@@ -149,6 +148,12 @@ def main():
         for p in problems:
             print(f"::error::{p}")
         sys.exit(1)
+
+    # Written last: gorelease (above) refuses to run if the working tree has
+    # untracked files, so the notes must not exist yet when it runs.
+    if args.notes:
+        with open(args.notes, "w") as f:
+            f.write(notes + "\n")
     print(f"{v_str} is ready to release.")
 
 
