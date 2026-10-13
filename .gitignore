@@ -33,3 +33,6 @@ Thumbs.db
 bin/
 dist/
 
+
+# Python bytecode (release scripts)
+__pycache__/

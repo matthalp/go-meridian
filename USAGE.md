@@ -328,14 +328,8 @@ go-meridian/
    make lint           # Run linter
    make run-example    # Test the example program
    ```
-5. **Update version** in `meridian.go` and `CHANGELOG.md`
-6. **Commit and tag**:
-   ```bash
-   git add .
-   git commit -m "Add new feature"
-   git tag v0.2.0
-   git push origin main --tags
-   ```
+5. **Add a CHANGELOG entry** under `## [Unreleased]`
+6. **Open a pull request.** Releases are cut separately (see "Publishing Updates")
 
 ### Adding New Timezone Packages
 
@@ -356,15 +350,8 @@ Timezone packages are generated; don't write them by hand. To add one (e.g., `ks
 
 ### Publishing Updates
 
-1. Update version number in `meridian.go`
-2. Update `CHANGELOG.md` with changes
-3. Create a git tag matching the version:
-   ```bash
-   git tag v0.2.0
-   git push origin v0.2.0
-   ```
-4. GitHub Actions will run CI automatically
-5. The package will be available on pkg.go.dev within minutes
+See "Publishing a New Version" in the README. Releases are cut by the Release
+workflow, not by pushing tags by hand.
 
 ### Best Practices
 
