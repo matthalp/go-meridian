@@ -28,8 +28,8 @@ Meridian's Time[TZ] type carries timezone information as a type parameter:
 		// The compiler enforces timezone correctness.
 	}
 
-Different timezones are different types, so meridian.Time[et.ET] and
-meridian.Time[pt.PT] cannot be accidentally mixed:
+Different timezones are different types, so meridian.Time[et.Timezone]
+and meridian.Time[pt.Timezone] cannot be accidentally mixed:
 
 	func ProcessET(t et.Time) {
 		// ... do something ...
@@ -39,8 +39,8 @@ meridian.Time[pt.PT] cannot be accidentally mixed:
 
 # Core Concepts
 
-Type-Safe Timezones: Each timezone is a distinct type. meridian.Time[et.ET]
-and meridian.Time[pt.PT] are as different as string and int.
+Type-Safe Timezones: Each timezone is a distinct type. meridian.Time[et.Timezone]
+and meridian.Time[pt.Timezone] are as different as string and int.
 
 Per-Timezone Packages: Each timezone has its own package (et, pt, utc, etc.)
 with convenience functions like et.Now() and pt.Date(...).

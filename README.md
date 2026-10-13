@@ -38,8 +38,8 @@ import (
     "fmt"
     "time"
     
-    "github.com/matthalp/go-meridian/v2/et"
-    "github.com/matthalp/go-meridian/v2/utc"
+    "github.com/matthalp/go-meridian/v2/timezones/et"
+    "github.com/matthalp/go-meridian/v2/timezones/utc"
 )
 
 func main() {
@@ -80,37 +80,26 @@ formatted := t.Format(time.Kitchen) // Definitely UTC! ✅
 
 ## Available Timezone Packages
 
-### Built-in Timezones (Backwards Compatible)
+All timezone packages live under `timezones/`:
 
-For backwards compatibility, all existing timezones are available at both root and in the `timezones/` directory:
+- `github.com/matthalp/go-meridian/v2/timezones/aest` - Australian Eastern Time (Australia/Sydney)
+- `github.com/matthalp/go-meridian/v2/timezones/brt` - Brasília Time (America/Sao_Paulo)
+- `github.com/matthalp/go-meridian/v2/timezones/cet` - Central European Time (Europe/Paris)
+- `github.com/matthalp/go-meridian/v2/timezones/cst` - China Standard Time (Asia/Shanghai)
+- `github.com/matthalp/go-meridian/v2/timezones/ct` - Central Time (America/Chicago)
+- `github.com/matthalp/go-meridian/v2/timezones/est` - America/New_York; same zone as `et`
+- `github.com/matthalp/go-meridian/v2/timezones/et` - Eastern Time (America/New_York)
+- `github.com/matthalp/go-meridian/v2/timezones/gmt` - Europe/London
+- `github.com/matthalp/go-meridian/v2/timezones/hkt` - Hong Kong Time (Asia/Hong_Kong)
+- `github.com/matthalp/go-meridian/v2/timezones/ist` - India Standard Time (Asia/Kolkata)
+- `github.com/matthalp/go-meridian/v2/timezones/jst` - Japan Standard Time (Asia/Tokyo)
+- `github.com/matthalp/go-meridian/v2/timezones/mt` - Mountain Time (America/Denver)
+- `github.com/matthalp/go-meridian/v2/timezones/pst` - America/Los_Angeles; same zone as `pt`
+- `github.com/matthalp/go-meridian/v2/timezones/pt` - Pacific Time (America/Los_Angeles)
+- `github.com/matthalp/go-meridian/v2/timezones/sgt` - Singapore Time (Asia/Singapore)
+- `github.com/matthalp/go-meridian/v2/timezones/utc` - Coordinated Universal Time
 
-**Root-level imports:**
-- `github.com/matthalp/go-meridian/v2/aest` - Australian Eastern Time (Australia/Sydney)
-- `github.com/matthalp/go-meridian/v2/brt` - Brasília Time (America/Sao_Paulo)
-- `github.com/matthalp/go-meridian/v2/cet` - Central European Time (Europe/Paris)
-- `github.com/matthalp/go-meridian/v2/cst` - China Standard Time (Asia/Shanghai)
-- `github.com/matthalp/go-meridian/v2/ct` - Central Time (America/Chicago)
-- `github.com/matthalp/go-meridian/v2/est` - Eastern Standard Time (America/New_York)
-- `github.com/matthalp/go-meridian/v2/et` - Eastern Time (America/New_York)
-- `github.com/matthalp/go-meridian/v2/gmt` - Greenwich Mean Time (Europe/London)
-- `github.com/matthalp/go-meridian/v2/hkt` - Hong Kong Time (Asia/Hong_Kong)
-- `github.com/matthalp/go-meridian/v2/ist` - India Standard Time (Asia/Kolkata)
-- `github.com/matthalp/go-meridian/v2/jst` - Japan Standard Time (Asia/Tokyo)
-- `github.com/matthalp/go-meridian/v2/mt` - Mountain Time (America/Denver)
-- `github.com/matthalp/go-meridian/v2/pt` - Pacific Time (America/Los_Angeles)
-- `github.com/matthalp/go-meridian/v2/pst` - Pacific Standard Time (America/Los_Angeles)
-- `github.com/matthalp/go-meridian/v2/sgt` - Singapore Time (Asia/Singapore)
-- `github.com/matthalp/go-meridian/v2/utc` - Coordinated Universal Time
-
-### Alternative: Timezones Directory (Future)
-
-In future versions, timezone packages may be organized in a `timezones/` directory:
-
-- `github.com/matthalp/go-meridian/v2/timezones/aest`
-- `github.com/matthalp/go-meridian/v2/timezones/et`
-- etc.
-
-Currently, all timezone packages are available at the root level as shown above.
+Packages are generated from `timezones.yaml`; see [Adding Custom Timezones](#adding-custom-timezones) below.
 
 ### Package API
 
@@ -146,15 +135,14 @@ The `Moment` interface allows both `time.Time` and `meridian.Time[TZ]` to be use
 
 ## Adding Custom Timezones
 
-As of v2.0.0, timezone packages are automatically generated from the `timezones.yaml` configuration file. To add a new timezone:
+Timezone packages are generated from the `timezones.yaml` configuration file. To add a new timezone:
 
 1. **Edit `timezones.yaml`** and add your timezone definition:
    ```yaml
    timezones:
-     - name: jst
-       location: Asia/Tokyo
-       description: Japan Standard Time
-       generate_at_root: false  # New timezones go in timezones/ directory only
+     - name: kst
+       location: Asia/Seoul
+       description: Korea Standard Time
    ```
 
 2. **Generate the package**:
@@ -164,9 +152,9 @@ As of v2.0.0, timezone packages are automatically generated from the `timezones.
 
 3. **Import and use**:
    ```go
-   import "github.com/matthalp/go-meridian/v2/jst"
-   
-   now := jst.Now()
+   import "github.com/matthalp/go-meridian/v2/timezones/kst"
+
+   now := kst.Now()
    ```
 
 The generator creates both the package implementation and comprehensive tests automatically. For more details, see `AGENTS.md`.
@@ -222,41 +210,17 @@ Coverage reports are automatically uploaded to Codecov for tracking test coverag
 │   └── workflows/
 │       └── ci.yml          # GitHub Actions workflow
 ├── cmd/
-<<<<<<< HEAD
-│   └── example/
-│       └── main.go         # Example usage program
-├── et/                     # Eastern Time timezone package
-│   ├── et.go
-│   └── et_test.go
-├── pt/                     # Pacific Time timezone package
-│   ├── pt.go
-│   └── pt_test.go
-├── utc/                    # UTC timezone package
-=======
 │   ├── example/
 │   │   └── main.go         # Example usage program
 │   └── generate-timezones/
 │       └── main.go         # Timezone package generator
-├── timezones/              # Generated timezone packages (v2.0.0+)
-│   ├── est/                # Eastern Time timezone package
-│   │   ├── est.go
-│   │   └── est_test.go
-│   ├── pst/                # Pacific Time timezone package
-│   │   ├── pst.go
-│   │   └── pst_test.go
-│   └── utc/                # UTC timezone package
-│       ├── utc.go
-│       └── utc_test.go
-├── est/                    # Eastern Time (backwards compatibility)
-│   ├── est.go
-│   └── est_test.go
-├── pst/                    # Pacific Time (backwards compatibility)
-│   ├── pst.go
-│   └── pst_test.go
-├── utc/                    # UTC (backwards compatibility)
->>>>>>> 2608a6a (Release v2.0.0: Add timezones/ directory structure with backwards compatibility)
-│   ├── utc.go
-│   └── utc_test.go
+├── timezones/              # Generated timezone packages (one per timezone)
+│   ├── et/
+│   │   ├── et.go
+│   │   └── et_test.go
+│   ├── pt/
+│   ├── utc/
+│   └── ...
 ├── .golangci.yml           # Linter configuration
 ├── doc.go                  # Package documentation
 ├── example_test.go         # Testable examples
@@ -270,7 +234,7 @@ Coverage reports are automatically uploaded to Codecov for tracking test coverag
 
 ## API Documentation
 
-For detailed API documentation, see [pkg.go.dev](https://pkg.go.dev/github.com/matthalp/go-meridian/v2) once the package is published.
+For detailed API documentation, see [pkg.go.dev](https://pkg.go.dev/github.com/matthalp/go-meridian/v2).
 
 ## Publishing a New Version
 

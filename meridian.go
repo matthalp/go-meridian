@@ -1,74 +1,3 @@
-/*
-Package meridian provides first-class, type-safe timezones for Go.
-
-# The Problem: Timezones Are Data, Not Types
-
-In Go's standard time package, timezone information in time.Time is optional data
-that can be silently lost or misinterpreted. The compiler provides no protection:
-
-	func ProcessDeadline(deadline time.Time) {
-		// Is deadline in UTC? EST? The user's local time?
-		// If the caller passes the wrong timezone, it compiles but causes bugs.
-	}
-
-This leads to subtle bugs in production where times are interpreted in the wrong
-timezone, causing incorrect behavior.
-
-# The Solution: Timezone as Type
-
-Meridian encodes timezone information directly in the type system using Go generics.
-Time[TZ] is a time.Time wrapper where TZ is a timezone type parameter:
-
-	import "github.com/matthalp/go-meridian/utc"
-
-	func ProcessDeadline(deadline utc.Time) {
-		// Now the timezone is guaranteed by the compiler!
-		// Only UTC times can be passed, preventing timezone bugs.
-	}
-
-Different timezones are incompatible types. meridian.Time[et.ET] and
-meridian.Time[pt.PT] cannot be mixed without explicit conversion:
-
-	func ProcessET(t et.Time) {
-		// ... do something ...
-	}
-
-	ProcessET(pt.Now())  // Compile error: cannot use pt.Time as et.Time
-
-# Core Design
-
-Type-Safe Times: Time[TZ] carries timezone information as a type parameter,
-making timezone part of the type system rather than runtime data.
-
-Explicit Conversions: Converting between timezones requires explicit function calls
-using the FromMoment function, making timezone handling visible in code review:
-
-	eastern := et.Now()
-	pacific := pt.FromMoment(eastern)  // Explicit and reviewable
-
-Moment Interface: Both time.Time and Time[TZ] implement the Moment interface,
-enabling seamless interoperability with existing code:
-
-	type Moment interface {
-		UTC() time.Time
-	}
-
-Internal UTC Storage: All times are stored as UTC internally, eliminating DST
-ambiguity and making database storage straightforward. The timezone is applied
-during display and component extraction operations.
-
-Per-Timezone Packages: Each timezone has its own package (et, pt, utc) with
-convenience functions like et.Now() and pt.Date(...), plus a Time alias
-for meridian.Time[Timezone].
-
-# Philosophy
-
-"Make wrong timezone handling impossible to compile."
-
-Meridian prioritizes compile-time safety over convenience and performance.
-Explicit conversions and type-safe APIs make timezone handling visible and
-prevent an entire class of bugs from reaching production.
-*/
 package meridian
 
 import (
@@ -200,7 +129,7 @@ func (t Time[TZ]) AppendFormat(b []byte, layout string) []byte {
 	return t.nativeTimeInLocation().AppendFormat(b, layout)
 }
 
-// String returns the time formatted using the RFC3339 layout with the timezone's location.
+// String returns the time formatted as by time.Time.String, in the timezone's location.
 // It implements the fmt.Stringer interface.
 func (t Time[TZ]) String() string {
 	return t.nativeTimeInLocation().String()
