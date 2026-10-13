@@ -318,9 +318,11 @@ if err != nil {
 
 ## CI/CD Pipeline
 
-The GitHub Actions workflow enforces:
-1. **Tests pass** on Go 1.20+ with race detection
-2. **Linting passes** with golangci-lint
+The GitHub Actions workflow runs on every pull request (any base branch) and
+on pushes to `main` and `release-*` branches. It enforces:
+1. **Tests pass** with race detection on Go 1.20 (the go.mod minimum),
+   `oldstable`, and `stable`
+2. **Linting passes** with golangci-lint (pinned; v2 config schema)
 3. **go.mod is tidy**: `go mod tidy` produces no changes
 4. **Generated code is in sync**: Timezone packages match `timezones.yaml`
 5. **Coverage tracking**: Reports uploaded to Codecov
@@ -421,7 +423,7 @@ Each generated timezone package includes:
 The code generator lives at `cmd/generate-timezones/main.go`:
 - Reads `timezones.yaml` using `gopkg.in/yaml.v3`
 - Uses Go templates for package and test generation
-- Formats output with `goimports` for proper import ordering
+- Formats output in-process with `go/format` (templates emit correctly grouped imports)
 - Handles conditional logic for UTC and import cycle prevention
 
 ## Questions to Ask Before Committing

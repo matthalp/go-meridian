@@ -6,9 +6,9 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"go/format"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -112,15 +112,15 @@ func generateFile(filename string, tmpl *template.Template, data TemplateData) e
 		return fmt.Errorf("failed to execute template: %w", err)
 	}
 
-	// Write to file first
-	if err := os.WriteFile(filename, buf.Bytes(), 0o600); err != nil {
-		return fmt.Errorf("failed to write file: %w", err)
+	// Format in-process with go/format. The templates already group imports
+	// correctly, so goimports is not needed.
+	src, err := format.Source(buf.Bytes())
+	if err != nil {
+		return fmt.Errorf("failed to format generated code: %w", err)
 	}
 
-	// Format using goimports (handles both formatting and import ordering)
-	cmd := exec.Command("goimports", "-w", filename)
-	if output, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to format with goimports: %w\nOutput: %s", err, output)
+	if err := os.WriteFile(filename, src, 0o600); err != nil {
+		return fmt.Errorf("failed to write file: %w", err)
 	}
 
 	return nil
@@ -249,14 +249,11 @@ var testTemplate = template.Must(template.New("test").Parse(`package {{.PackageN
 import (
 	"testing"
 	"time"
-{{- if or (ne .PackageName "pt") (ne .PackageName "utc")}}
-
-{{- if ne .PackageName "pt"}}
+{{if ne .PackageName "pt"}}
 	"github.com/matthalp/go-meridian/v2/timezones/pt"
 {{- end}}
 {{- if ne .PackageName "utc"}}
 	"github.com/matthalp/go-meridian/v2/timezones/utc"
-{{- end}}
 {{- end}}
 )
 
