@@ -1,7 +1,7 @@
 /*
 Package ct provides Central Time timezone support for meridian.
 
-CT represents the America/Chicago IANA timezone, which observes Central Time depending on the time of year.
+CT represents the America/Chicago IANA timezone, which observes Central Standard Time (CST, UTC-6) and, in summer, Central Daylight Time (CDT, UTC-5).
 
 # Usage
 
@@ -13,8 +13,8 @@ Create CT times:
 
 Convert to CT from other timezones:
 
-	eastern := est.Now()
-	pacific := ct.FromMoment(eastern)
+	eastern := et.Now()
+	converted := ct.FromMoment(eastern)
 
 Convert from standard time.Time:
 
@@ -38,11 +38,14 @@ import (
 var location = mustLoadLocation("America/Chicago")
 
 // mustLoadLocation loads a timezone location or panics if it fails.
-// This should only fail if the system's timezone database is corrupted or missing.
+// This only fails if the host has no usable timezone database, as in scratch
+// or distroless containers. Programs that run there should embed one by
+// importing the time/tzdata package from their main package.
 func mustLoadLocation(name string) *time.Location {
 	loc, err := time.LoadLocation(name)
 	if err != nil {
-		panic(fmt.Sprintf("failed to load timezone %s: %v", name, err))
+		panic(fmt.Sprintf("meridian/ct: failed to load timezone %s: %v "+
+			"(if this host has no timezone database, add import _ \"time/tzdata\" to your main package)", name, err))
 	}
 	return loc
 }

@@ -1,20 +1,22 @@
 /*
 Package est provides Eastern Standard Time timezone support for meridian.
 
-EST represents the America/New_York IANA timezone, which observes Eastern Standard Time (EST) and Eastern Daylight Time (EDT) depending on the time of year.
+EST represents the America/New_York IANA timezone, which observes Eastern Standard Time (EST, UTC-5) and, in summer, Eastern Daylight Time (EDT, UTC-4), despite the package name.
+
+Deprecated: Use package et, which is the same timezone (America/New_York). The name est suggests a fixed UTC-5 offset, but this package follows daylight saving time. Package est will be removed in v3.
 
 # Usage
 
 Create EST times:
 
 	now := est.Now()
-	meeting := est.Date(2024, time.December, 25, 9, 0, 0, 0)
-	parsed, _ := est.Parse(time.RFC3339, "2024-12-25T09:00:00-05:00")
+	specific := est.Date(2024, time.December, 25, 10, 30, 0, 0)
+	parsed, _ := est.Parse(time.RFC3339, "2024-12-25T10:30:00Z")
 
 Convert to EST from other timezones:
 
-	pacific := pst.Now()
-	eastern := est.FromMoment(pacific)
+	eastern := et.Now()
+	converted := est.FromMoment(eastern)
 
 Convert from standard time.Time:
 
@@ -38,11 +40,14 @@ import (
 var location = mustLoadLocation("America/New_York")
 
 // mustLoadLocation loads a timezone location or panics if it fails.
-// This should only fail if the system's timezone database is corrupted or missing.
+// This only fails if the host has no usable timezone database, as in scratch
+// or distroless containers. Programs that run there should embed one by
+// importing the time/tzdata package from their main package.
 func mustLoadLocation(name string) *time.Location {
 	loc, err := time.LoadLocation(name)
 	if err != nil {
-		panic(fmt.Sprintf("failed to load timezone %s: %v", name, err))
+		panic(fmt.Sprintf("meridian/est: failed to load timezone %s: %v "+
+			"(if this host has no timezone database, add import _ \"time/tzdata\" to your main package)", name, err))
 	}
 	return loc
 }

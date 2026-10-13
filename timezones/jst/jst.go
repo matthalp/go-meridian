@@ -1,7 +1,7 @@
 /*
 Package jst provides Japan Standard Time timezone support for meridian.
 
-JST represents the Asia/Tokyo IANA timezone, which observes Japan Standard Time depending on the time of year.
+JST represents the Asia/Tokyo IANA timezone, which observes Japan Standard Time (JST, UTC+9) year-round.
 
 # Usage
 
@@ -13,8 +13,8 @@ Create JST times:
 
 Convert to JST from other timezones:
 
-	eastern := est.Now()
-	pacific := jst.FromMoment(eastern)
+	eastern := et.Now()
+	converted := jst.FromMoment(eastern)
 
 Convert from standard time.Time:
 
@@ -38,11 +38,14 @@ import (
 var location = mustLoadLocation("Asia/Tokyo")
 
 // mustLoadLocation loads a timezone location or panics if it fails.
-// This should only fail if the system's timezone database is corrupted or missing.
+// This only fails if the host has no usable timezone database, as in scratch
+// or distroless containers. Programs that run there should embed one by
+// importing the time/tzdata package from their main package.
 func mustLoadLocation(name string) *time.Location {
 	loc, err := time.LoadLocation(name)
 	if err != nil {
-		panic(fmt.Sprintf("failed to load timezone %s: %v", name, err))
+		panic(fmt.Sprintf("meridian/jst: failed to load timezone %s: %v "+
+			"(if this host has no timezone database, add import _ \"time/tzdata\" to your main package)", name, err))
 	}
 	return loc
 }

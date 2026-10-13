@@ -1,7 +1,7 @@
 /*
 Package pt provides Pacific Time timezone support for meridian.
 
-PT represents the America/Los_Angeles IANA timezone, which observes Pacific Time depending on the time of year.
+PT represents the America/Los_Angeles IANA timezone, which observes Pacific Standard Time (PST, UTC-8) and, in summer, Pacific Daylight Time (PDT, UTC-7).
 
 # Usage
 
@@ -13,8 +13,8 @@ Create PT times:
 
 Convert to PT from other timezones:
 
-	eastern := est.Now()
-	pacific := pt.FromMoment(eastern)
+	eastern := et.Now()
+	converted := pt.FromMoment(eastern)
 
 Convert from standard time.Time:
 
@@ -38,11 +38,14 @@ import (
 var location = mustLoadLocation("America/Los_Angeles")
 
 // mustLoadLocation loads a timezone location or panics if it fails.
-// This should only fail if the system's timezone database is corrupted or missing.
+// This only fails if the host has no usable timezone database, as in scratch
+// or distroless containers. Programs that run there should embed one by
+// importing the time/tzdata package from their main package.
 func mustLoadLocation(name string) *time.Location {
 	loc, err := time.LoadLocation(name)
 	if err != nil {
-		panic(fmt.Sprintf("failed to load timezone %s: %v", name, err))
+		panic(fmt.Sprintf("meridian/pt: failed to load timezone %s: %v "+
+			"(if this host has no timezone database, add import _ \"time/tzdata\" to your main package)", name, err))
 	}
 	return loc
 }

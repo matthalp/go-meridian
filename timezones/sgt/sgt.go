@@ -1,7 +1,7 @@
 /*
 Package sgt provides Singapore Time timezone support for meridian.
 
-SGT represents the Asia/Singapore IANA timezone, which observes Singapore Time depending on the time of year.
+SGT represents the Asia/Singapore IANA timezone, which observes UTC+8 year-round; the tz database abbreviates it as "+08" rather than "SGT".
 
 # Usage
 
@@ -13,8 +13,8 @@ Create SGT times:
 
 Convert to SGT from other timezones:
 
-	eastern := est.Now()
-	pacific := sgt.FromMoment(eastern)
+	eastern := et.Now()
+	converted := sgt.FromMoment(eastern)
 
 Convert from standard time.Time:
 
@@ -38,11 +38,14 @@ import (
 var location = mustLoadLocation("Asia/Singapore")
 
 // mustLoadLocation loads a timezone location or panics if it fails.
-// This should only fail if the system's timezone database is corrupted or missing.
+// This only fails if the host has no usable timezone database, as in scratch
+// or distroless containers. Programs that run there should embed one by
+// importing the time/tzdata package from their main package.
 func mustLoadLocation(name string) *time.Location {
 	loc, err := time.LoadLocation(name)
 	if err != nil {
-		panic(fmt.Sprintf("failed to load timezone %s: %v", name, err))
+		panic(fmt.Sprintf("meridian/sgt: failed to load timezone %s: %v "+
+			"(if this host has no timezone database, add import _ \"time/tzdata\" to your main package)", name, err))
 	}
 	return loc
 }

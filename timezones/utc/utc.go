@@ -15,8 +15,8 @@ Create UTC times:
 
 Convert to UTC from other timezones:
 
-	eastern := est.Now()
-	universal := utc.FromMoment(eastern)
+	eastern := et.Now()
+	converted := utc.FromMoment(eastern)
 
 The utc.Time type is an alias for meridian.Time[utc.Timezone], providing
 compile-time timezone safety while maintaining compatibility with standard
@@ -35,11 +35,14 @@ import (
 var location = mustLoadLocation("UTC")
 
 // mustLoadLocation loads a timezone location or panics if it fails.
-// This should only fail if the system's timezone database is corrupted or missing.
+// This only fails if the host has no usable timezone database, as in scratch
+// or distroless containers. Programs that run there should embed one by
+// importing the time/tzdata package from their main package.
 func mustLoadLocation(name string) *time.Location {
 	loc, err := time.LoadLocation(name)
 	if err != nil {
-		panic(fmt.Sprintf("failed to load timezone %s: %v", name, err))
+		panic(fmt.Sprintf("meridian/utc: failed to load timezone %s: %v "+
+			"(if this host has no timezone database, add import _ \"time/tzdata\" to your main package)", name, err))
 	}
 	return loc
 }

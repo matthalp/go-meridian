@@ -1,7 +1,7 @@
 /*
 Package cst provides China Standard Time timezone support for meridian.
 
-CST represents the Asia/Shanghai IANA timezone, which observes China Standard Time depending on the time of year.
+CST represents the Asia/Shanghai IANA timezone, which observes China Standard Time (UTC+8) year-round. Not to be confused with US Central Standard Time, which is in package ct.
 
 # Usage
 
@@ -13,8 +13,8 @@ Create CST times:
 
 Convert to CST from other timezones:
 
-	eastern := est.Now()
-	pacific := cst.FromMoment(eastern)
+	eastern := et.Now()
+	converted := cst.FromMoment(eastern)
 
 Convert from standard time.Time:
 
@@ -38,11 +38,14 @@ import (
 var location = mustLoadLocation("Asia/Shanghai")
 
 // mustLoadLocation loads a timezone location or panics if it fails.
-// This should only fail if the system's timezone database is corrupted or missing.
+// This only fails if the host has no usable timezone database, as in scratch
+// or distroless containers. Programs that run there should embed one by
+// importing the time/tzdata package from their main package.
 func mustLoadLocation(name string) *time.Location {
 	loc, err := time.LoadLocation(name)
 	if err != nil {
-		panic(fmt.Sprintf("failed to load timezone %s: %v", name, err))
+		panic(fmt.Sprintf("meridian/cst: failed to load timezone %s: %v "+
+			"(if this host has no timezone database, add import _ \"time/tzdata\" to your main package)", name, err))
 	}
 	return loc
 }

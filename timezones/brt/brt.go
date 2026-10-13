@@ -1,7 +1,7 @@
 /*
 Package brt provides Brasília Time timezone support for meridian.
 
-BRT represents the America/Sao_Paulo IANA timezone, which observes Brasília Time depending on the time of year.
+BRT represents the America/Sao_Paulo IANA timezone, which observes UTC-3 year-round (Brazil abolished daylight saving time in 2019); the tz database abbreviates it as "-03" rather than "BRT".
 
 # Usage
 
@@ -13,8 +13,8 @@ Create BRT times:
 
 Convert to BRT from other timezones:
 
-	eastern := est.Now()
-	pacific := brt.FromMoment(eastern)
+	eastern := et.Now()
+	converted := brt.FromMoment(eastern)
 
 Convert from standard time.Time:
 
@@ -38,11 +38,14 @@ import (
 var location = mustLoadLocation("America/Sao_Paulo")
 
 // mustLoadLocation loads a timezone location or panics if it fails.
-// This should only fail if the system's timezone database is corrupted or missing.
+// This only fails if the host has no usable timezone database, as in scratch
+// or distroless containers. Programs that run there should embed one by
+// importing the time/tzdata package from their main package.
 func mustLoadLocation(name string) *time.Location {
 	loc, err := time.LoadLocation(name)
 	if err != nil {
-		panic(fmt.Sprintf("failed to load timezone %s: %v", name, err))
+		panic(fmt.Sprintf("meridian/brt: failed to load timezone %s: %v "+
+			"(if this host has no timezone database, add import _ \"time/tzdata\" to your main package)", name, err))
 	}
 	return loc
 }

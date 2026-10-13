@@ -1,7 +1,7 @@
 /*
 Package et provides Eastern Time timezone support for meridian.
 
-ET represents the America/New_York IANA timezone, which observes Eastern Time depending on the time of year.
+ET represents the America/New_York IANA timezone, which observes Eastern Standard Time (EST, UTC-5) and, in summer, Eastern Daylight Time (EDT, UTC-4).
 
 # Usage
 
@@ -13,8 +13,8 @@ Create ET times:
 
 Convert to ET from other timezones:
 
-	eastern := est.Now()
-	pacific := et.FromMoment(eastern)
+	pacific := pt.Now()
+	eastern := et.FromMoment(pacific)
 
 Convert from standard time.Time:
 
@@ -38,11 +38,14 @@ import (
 var location = mustLoadLocation("America/New_York")
 
 // mustLoadLocation loads a timezone location or panics if it fails.
-// This should only fail if the system's timezone database is corrupted or missing.
+// This only fails if the host has no usable timezone database, as in scratch
+// or distroless containers. Programs that run there should embed one by
+// importing the time/tzdata package from their main package.
 func mustLoadLocation(name string) *time.Location {
 	loc, err := time.LoadLocation(name)
 	if err != nil {
-		panic(fmt.Sprintf("failed to load timezone %s: %v", name, err))
+		panic(fmt.Sprintf("meridian/et: failed to load timezone %s: %v "+
+			"(if this host has no timezone database, add import _ \"time/tzdata\" to your main package)", name, err))
 	}
 	return loc
 }

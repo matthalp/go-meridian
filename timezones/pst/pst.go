@@ -1,20 +1,22 @@
 /*
 Package pst provides Pacific Standard Time timezone support for meridian.
 
-PST represents the America/Los_Angeles IANA timezone, which observes Pacific Standard Time (PST) and Pacific Daylight Time (PDT) depending on the time of year.
+PST represents the America/Los_Angeles IANA timezone, which observes Pacific Standard Time (PST, UTC-8) and, in summer, Pacific Daylight Time (PDT, UTC-7), despite the package name.
+
+Deprecated: Use package pt, which is the same timezone (America/Los_Angeles). The name pst suggests a fixed UTC-8 offset, but this package follows daylight saving time. Package pst will be removed in v3.
 
 # Usage
 
 Create PST times:
 
 	now := pst.Now()
-	event := pst.Date(2024, time.December, 25, 6, 0, 0, 0)
-	parsed, _ := pst.Parse(time.RFC3339, "2024-12-25T06:00:00-08:00")
+	specific := pst.Date(2024, time.December, 25, 10, 30, 0, 0)
+	parsed, _ := pst.Parse(time.RFC3339, "2024-12-25T10:30:00Z")
 
 Convert to PST from other timezones:
 
-	eastern := est.Now()
-	pacific := pst.FromMoment(eastern)
+	eastern := et.Now()
+	converted := pst.FromMoment(eastern)
 
 Convert from standard time.Time:
 
@@ -38,11 +40,14 @@ import (
 var location = mustLoadLocation("America/Los_Angeles")
 
 // mustLoadLocation loads a timezone location or panics if it fails.
-// This should only fail if the system's timezone database is corrupted or missing.
+// This only fails if the host has no usable timezone database, as in scratch
+// or distroless containers. Programs that run there should embed one by
+// importing the time/tzdata package from their main package.
 func mustLoadLocation(name string) *time.Location {
 	loc, err := time.LoadLocation(name)
 	if err != nil {
-		panic(fmt.Sprintf("failed to load timezone %s: %v", name, err))
+		panic(fmt.Sprintf("meridian/pst: failed to load timezone %s: %v "+
+			"(if this host has no timezone database, add import _ \"time/tzdata\" to your main package)", name, err))
 	}
 	return loc
 }
