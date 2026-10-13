@@ -53,7 +53,8 @@ jobs:
         run: go install "golang.org/x/exp/cmd/gorelease@${GORELEASE_VERSION}"
 
       - name: Check release
-        run: python3 .github/scripts/check_release.py "$VERSION" --notes release-notes.md
+        # Notes go outside the checkout so the tree stays clean for gorelease.
+        run: python3 .github/scripts/check_release.py "$VERSION" --notes "$RUNNER_TEMP/release-notes.md"
 
       - name: Create tag
         run: |
@@ -63,7 +64,7 @@ jobs:
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$VERSION" --verify-tag --title "$VERSION" --notes-file release-notes.md
+        run: gh release create "$VERSION" --verify-tag --title "$VERSION" --notes-file "$RUNNER_TEMP/release-notes.md"
 
       - name: Ask the Go module proxy to fetch the release
         run: GOPROXY=https://proxy.golang.org GOFLAGS=-mod=mod go list -m "$(go list -m)@$VERSION"
