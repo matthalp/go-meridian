@@ -52,10 +52,12 @@ generate:
 GORELEASE_VERSION := v0.0.0-20261011100332-faecfb24eb49
 
 # Check that the tree is ready to release as $(VERSION), as the Release workflow does.
+# GOPROXY=direct keeps gorelease from caching "not found" for VERSION on
+# proxy.golang.org; see the Check release step in .github/workflows/release.yml.
 release-check:
 	@test -n "$(VERSION)" || (echo "usage: make release-check VERSION=vX.Y.Z" && exit 1)
 	go install golang.org/x/exp/cmd/gorelease@$(GORELEASE_VERSION)
-	python3 .github/scripts/check_release.py $(VERSION) --gorelease "$$(go env GOPATH)/bin/gorelease"
+	GOPROXY=direct python3 .github/scripts/check_release.py $(VERSION) --gorelease "$$(go env GOPATH)/bin/gorelease"
 
 # Install development tools
 install-tools:

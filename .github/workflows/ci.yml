@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main, 'release-*' ]
+    branches: [ main, 'release-v*' ]
   # Run on every PR regardless of base branch, so PRs into release or feature
   # branches are checked too.
   pull_request:
@@ -19,10 +19,10 @@ jobs:
         go: [ '1.20.x', 'oldstable', 'stable' ]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go }}
 
@@ -38,7 +38,7 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: matrix.go == 'stable'
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v7
         with:
           files: ./coverage.out
           flags: unittests
@@ -46,7 +46,7 @@ jobs:
 
       - name: Upload coverage artifact
         if: matrix.go == 'stable'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-report
           path: |
@@ -58,15 +58,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: stable
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v8
+        uses: golangci/golangci-lint-action@v9
         with:
           # Keep in sync with GOLANGCI_LINT_VERSION in the Makefile.
           version: v2.14.0
@@ -76,10 +76,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: stable
 

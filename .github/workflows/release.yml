@@ -37,12 +37,12 @@ jobs:
           esac
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0 # tags are needed to find the previous release
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: stable
 
@@ -53,6 +53,12 @@ jobs:
         run: go install "golang.org/x/exp/cmd/gorelease@${GORELEASE_VERSION}"
 
       - name: Check release
+        env:
+          # gorelease looks up the version being released. Through the module
+          # proxy, that lookup is cached as "not found" and the new tag stays
+          # invisible on proxy.golang.org for a while after it is pushed. Going
+          # direct to GitHub avoids that.
+          GOPROXY: direct
         # Notes go outside the checkout so the tree stays clean for gorelease.
         run: python3 .github/scripts/check_release.py "$VERSION" --notes "$RUNNER_TEMP/release-notes.md"
 
@@ -67,4 +73,15 @@ jobs:
         run: gh release create "$VERSION" --verify-tag --title "$VERSION" --notes-file "$RUNNER_TEMP/release-notes.md"
 
       - name: Ask the Go module proxy to fetch the release
-        run: GOPROXY=https://proxy.golang.org GOFLAGS=-mod=mod go list -m "$(go list -m)@$VERSION"
+        # The tag and release are already published at this point, so a proxy
+        # that is slow to see the tag only warns instead of failing the run.
+        run: |
+          module="$(go list -m)"
+          for attempt in $(seq 1 10); do
+            if GOPROXY=https://proxy.golang.org GOFLAGS=-mod=mod go list -m "$module@$VERSION"; then
+              exit 0
+            fi
+            echo "proxy.golang.org does not have $module@$VERSION yet (attempt $attempt); retrying in 60s"
+            sleep 60
+          done
+          echo "::warning::proxy.golang.org did not serve $module@$VERSION within 10 minutes; it will pick it up on the next request"

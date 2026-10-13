@@ -324,7 +324,7 @@ if err != nil {
 ## CI/CD Pipeline
 
 The GitHub Actions workflow runs on every pull request (any base branch) and
-on pushes to `main` and `release-*` branches. It enforces:
+on pushes to `main` and `release-vN` branches. It enforces:
 1. **Tests pass** with race detection on Go 1.20 (the go.mod minimum),
    `oldstable`, and `stable`
 2. **Linting passes** with golangci-lint (pinned; v2 config schema)
