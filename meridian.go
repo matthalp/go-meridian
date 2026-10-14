@@ -10,9 +10,6 @@ import (
 	"time"
 )
 
-// Version is the current version of the meridian package.
-const Version = "2.1.0"
-
 // Timezone interface that all timezone types must implement.
 // Each timezone package defines its own Timezone type that satisfies this interface,
 // enabling Time[TZ] to be parameterized with type-safe timezone information.

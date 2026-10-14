@@ -249,14 +249,14 @@ func GetBusinessDayEnd[TZ Timezone](t meridian.Time[TZ]) meridian.Time[TZ] {
 4. Is the API intuitive for library consumers?
 
 ### Publishing Checklist
-1. Merge a release-prep PR that bumps `Version` in `meridian.go` and moves the
-   `## [Unreleased]` entries in `CHANGELOG.md` under `## [X.Y.Z] - YYYY-MM-DD`.
+1. Merge a release-prep PR that moves the `## [Unreleased]` entries in
+   `CHANGELOG.md` under `## [X.Y.Z] - YYYY-MM-DD`.
 2. Check locally (optional; the workflow runs the same check):
    `make release-check VERSION=vX.Y.Z`
 3. Run the **Release** workflow (Actions > Release > Run workflow) from `main`,
    or from `release-vN` for a backport to an older major version, with the
    version as input. It runs the tests, checks the version against `go.mod`,
-   `Version`, `CHANGELOG.md` and the API changes since the previous release
+   `CHANGELOG.md` and the API changes since the previous release
    (via `gorelease`), then creates the tag and the GitHub release from the
    changelog section.
 

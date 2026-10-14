@@ -42,12 +42,6 @@ func (c CustomOffset) Location() *time.Location {
 	return time.FixedZone("Custom", c.offset*3600)
 }
 
-func TestVersion(t *testing.T) {
-	if Version == "" {
-		t.Error("Version should not be empty")
-	}
-}
-
 func TestNow(t *testing.T) {
 	t.Run("UTC", func(t *testing.T) {
 		before := time.Now().UTC()

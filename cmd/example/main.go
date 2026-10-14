@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/matthalp/go-meridian/v3"
 	"github.com/matthalp/go-meridian/v3/timezones/et"
 	"github.com/matthalp/go-meridian/v3/timezones/pt"
 	"github.com/matthalp/go-meridian/v3/timezones/utc"
@@ -14,7 +13,7 @@ import (
 func main() {
 	fmt.Println("Meridian Package Example")
 	fmt.Println("=========================")
-	fmt.Printf("Version: %s\n\n", meridian.Version)
+	fmt.Println()
 
 	// Example 1: Get current time in different timezones
 	fmt.Println("1. Current Time:")

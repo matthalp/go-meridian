@@ -342,7 +342,7 @@ go-meridian/
 ### Key Concepts
 
 1. **Exported vs Unexported**
-   - Exported (public): Start with uppercase letter (e.g., `Greet`, `Version`)
+   - Exported (public): Start with uppercase letter (e.g., `Now`, `Date`)
    - Unexported (private): Start with lowercase letter (e.g., `helper`)
 
 2. **Package Documentation**
