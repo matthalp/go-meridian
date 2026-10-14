@@ -29,7 +29,7 @@ type Moment interface {
 
 // Now returns the current time in the specified timezone.
 // The timezone type parameter TZ is typically inferred from context or explicitly
-// specified. For most use cases, prefer timezone-specific helpers like est.Now()
+// specified. For most use cases, prefer timezone-specific helpers like et.Now()
 // or utc.Now() for better readability.
 func Now[TZ Timezone]() Time[TZ] {
 	return Time[TZ]{utcTime: time.Now().UTC()}
@@ -39,7 +39,7 @@ func Now[TZ Timezone]() Time[TZ] {
 // in the specified timezone. The date components are interpreted in the timezone's
 // location, then stored internally as UTC. The timezone type is preserved in the
 // return type, ensuring type-safe handling. For most use cases, prefer timezone-specific
-// helpers like est.Date() or utc.Date() for better readability.
+// helpers like et.Date() or utc.Date() for better readability.
 func Date[TZ Timezone](year int, month time.Month, day, hour, minute, sec, nsec int) Time[TZ] {
 	loc := getLocation[TZ]()
 	t := time.Date(year, month, day, hour, minute, sec, nsec, loc)
@@ -50,7 +50,7 @@ func Date[TZ Timezone](year int, month time.Month, day, hour, minute, sec, nsec 
 // This is the primary way to convert between timezones explicitly. The conversion
 // preserves the moment in time (UTC equality) but changes the timezone type, making
 // the conversion visible in code review. For most use cases, prefer timezone-specific
-// helpers like est.FromMoment() or pst.FromMoment() for better readability.
+// helpers like et.FromMoment() or pt.FromMoment() for better readability.
 func FromMoment[TZ Timezone](m Moment) Time[TZ] {
 	return Time[TZ]{utcTime: m.UTC()}
 }
