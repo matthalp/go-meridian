@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-10-13
+
+### Upgrading from v2
+1. Change imports from `github.com/matthalp/go-meridian/v2` to
+   `github.com/matthalp/go-meridian/v3`.
+2. Replace `timezones/est` with `timezones/et` and `timezones/pst` with
+   `timezones/pt`. They are the same timezones.
+3. Declare nullable database columns as `sql.Null[Time[TZ]]` (or
+   `*Time[TZ]`); `Scan` now returns `ErrScanNull` for NULL.
+4. If you read `meridian.Version`, use `runtime/debug.ReadBuildInfo` instead.
+5. Build with Go 1.26 or later.
+
+### Added
+- `Time[TZ].To[TZ2]()`, the fluent method form of `FromMoment`:
+  `eastern.To[pt.Timezone]()`. It chains:
+  `t.To[utc.Timezone]().To[pt.Timezone]()`. `To` is a generic method, a Go 1.27
+  language feature, so it is only available when building with Go 1.27 or
+  later; the rest of the module works on Go 1.26. (#31)
+- `ErrScanNull`, the error `Scan` returns for SQL NULL. (#32)
+
+### Changed
+- **BREAKING**: Module path is now `github.com/matthalp/go-meridian/v3`.
+- **BREAKING**: `Time[TZ].Scan(nil)` returns `ErrScanNull` and leaves the value
+  unchanged. It used to set the zero time, which made a NULL column
+  indistinguishable from the zero time, and `Value` then wrote the zero time
+  back where NULL had been. `time.Time` refuses NULL the same way. (#32)
+- **BREAKING**: Decoding JSON `null` into a `Time[TZ]` leaves it unchanged,
+  following the `encoding/json` convention and `time.Time`. It used to reset
+  the value to the zero time. Use a `*Time[TZ]` field to tell null apart.
+- **BREAKING**: The minimum Go version is now 1.26, the oldest release the Go
+  team supports (was 1.20). CI tests the minimum, oldstable and stable.
+
+### Removed
+- **BREAKING**: Packages `timezones/est` and `timezones/pst`, deprecated in
+  2.1.0. Use `timezones/et` and `timezones/pt`.
+- **BREAKING**: The `Version` constant. It had to be bumped by hand and
+  duplicated the module version Go already records; read it with
+  `runtime/debug.ReadBuildInfo`.
+
 ## [2.1.0] - 2026-10-13
 
 ### Deprecated
