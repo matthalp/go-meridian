@@ -10,6 +10,8 @@ Install the meridian package and timezone subpackages:
 go get github.com/matthalp/go-meridian/v3
 ```
 
+Requires Go 1.26 or later; the `To` method needs Go 1.27.
+
 ### Basic Usage - Timezone Packages
 
 The easiest way to use Meridian is through the timezone-specific packages:
@@ -120,6 +122,17 @@ func main() {
     fmt.Println(meeting.UTC().Equal(ptMeeting.UTC()))  // true
 }
 ```
+
+With Go 1.27 or later, `Time` also has a `To` method, the fluent form of the same
+conversion. It is a generic method, a Go 1.27 language feature:
+
+```go
+ptMeeting := meeting.To[pt.Timezone]()
+utcMeeting := meeting.To[pt.Timezone]().To[utc.Timezone]() // conversions chain
+```
+
+`To` only starts from a `meridian.Time`; to convert a plain `time.Time`, use
+`FromMoment` as shown below.
 
 ### Converting from time.Time
 

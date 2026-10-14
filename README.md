@@ -27,6 +27,10 @@ Install the package in your Go project:
 go get github.com/matthalp/go-meridian/v3
 ```
 
+Requires Go 1.26 or later. The `To` conversion method needs Go 1.27, because it
+is a generic method (a Go 1.27 language feature); everything else works on
+Go 1.26. Upgrading from v2? See the [changelog](CHANGELOG.md).
+
 Timezone packages load their location from the host's timezone database when
 first imported, and panic if it is missing. On hosts without one (for example
 `scratch` or distroless container images), embed Go's copy by adding this to
@@ -138,6 +142,10 @@ typedTime := utc.FromMoment(stdTime)  // Now type-safe!
 
 // All conversions preserve the moment in time
 fmt.Println(etTime.UTC().Equal(utcTime.UTC()))  // true
+
+// Go 1.27+: the To method is the fluent form of FromMoment, and chains
+ptTime = etTime.To[pt.Timezone]()
+utcTime = etTime.To[pt.Timezone]().To[utc.Timezone]()
 ```
 
 The `Moment` interface allows both `time.Time` and `meridian.Time[TZ]` to be used interchangeably for conversions, providing flexibility while maintaining type safety where it matters.
