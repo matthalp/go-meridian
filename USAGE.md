@@ -7,7 +7,7 @@
 Install the meridian package and timezone subpackages:
 
 ```bash
-go get github.com/matthalp/go-meridian/v2
+go get github.com/matthalp/go-meridian/v3
 ```
 
 ### Basic Usage - Timezone Packages
@@ -21,9 +21,9 @@ import (
     "fmt"
     "time"
     
-    "github.com/matthalp/go-meridian/v2/timezones/et"
-    "github.com/matthalp/go-meridian/v2/timezones/pt"
-    "github.com/matthalp/go-meridian/v2/timezones/utc"
+    "github.com/matthalp/go-meridian/v3/timezones/et"
+    "github.com/matthalp/go-meridian/v3/timezones/pt"
+    "github.com/matthalp/go-meridian/v3/timezones/utc"
 )
 
 func main() {
@@ -52,8 +52,8 @@ package events
 import (
     "database/sql"
 
-    "github.com/matthalp/go-meridian/v2/timezones/et"
-    "github.com/matthalp/go-meridian/v2/timezones/utc"
+    "github.com/matthalp/go-meridian/v3/timezones/et"
+    "github.com/matthalp/go-meridian/v3/timezones/utc"
 )
 
 // Function only accepts UTC times
@@ -98,9 +98,9 @@ import (
     "fmt"
     "time"
     
-    "github.com/matthalp/go-meridian/v2/timezones/et"
-    "github.com/matthalp/go-meridian/v2/timezones/pt"
-    "github.com/matthalp/go-meridian/v2/timezones/utc"
+    "github.com/matthalp/go-meridian/v3/timezones/et"
+    "github.com/matthalp/go-meridian/v3/timezones/pt"
+    "github.com/matthalp/go-meridian/v3/timezones/utc"
 )
 
 func main() {
@@ -130,8 +130,8 @@ package main
 
 import (
     "time"
-    "github.com/matthalp/go-meridian/v2/timezones/utc"
-    "github.com/matthalp/go-meridian/v2/timezones/et"
+    "github.com/matthalp/go-meridian/v3/timezones/utc"
+    "github.com/matthalp/go-meridian/v3/timezones/et"
 )
 
 func processStandardTime(stdTime time.Time) {
@@ -159,9 +159,9 @@ import (
     "fmt"
     "time"
     
-    "github.com/matthalp/go-meridian/v2/timezones/et"
-    "github.com/matthalp/go-meridian/v2/timezones/pt"
-    "github.com/matthalp/go-meridian/v2/timezones/utc"
+    "github.com/matthalp/go-meridian/v3/timezones/et"
+    "github.com/matthalp/go-meridian/v3/timezones/pt"
+    "github.com/matthalp/go-meridian/v3/timezones/utc"
 )
 
 func main() {
@@ -251,7 +251,7 @@ import (
     "fmt"
     "time"
 
-    "github.com/matthalp/go-meridian/v2"
+    "github.com/matthalp/go-meridian/v3"
 )
 
 // Define a custom timezone. Load the location once, not on every call.

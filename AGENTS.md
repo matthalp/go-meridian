@@ -153,8 +153,8 @@ import (
     // External dependencies (none currently)
     
     // Internal packages
-    "github.com/matthalp/go-meridian/v2"
-    "github.com/matthalp/go-meridian/v2/timezones/et"
+    "github.com/matthalp/go-meridian/v3"
+    "github.com/matthalp/go-meridian/v3/timezones/et"
 )
 ```
 

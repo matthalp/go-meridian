@@ -24,7 +24,7 @@ Meridian solves a fundamental problem: timezone information in `time.Time` is da
 Install the package in your Go project:
 
 ```bash
-go get github.com/matthalp/go-meridian/v2
+go get github.com/matthalp/go-meridian/v3
 ```
 
 Timezone packages load their location from the host's timezone database when
@@ -47,8 +47,8 @@ import (
     "fmt"
     "time"
     
-    "github.com/matthalp/go-meridian/v2/timezones/et"
-    "github.com/matthalp/go-meridian/v2/timezones/utc"
+    "github.com/matthalp/go-meridian/v3/timezones/et"
+    "github.com/matthalp/go-meridian/v3/timezones/utc"
 )
 
 func main() {
@@ -91,22 +91,22 @@ formatted := t.Format(time.Kitchen) // Definitely UTC! ✅
 
 All timezone packages live under `timezones/`:
 
-- `github.com/matthalp/go-meridian/v2/timezones/aest` - Australian Eastern Time (Australia/Sydney)
-- `github.com/matthalp/go-meridian/v2/timezones/brt` - Brasília Time (America/Sao_Paulo)
-- `github.com/matthalp/go-meridian/v2/timezones/cet` - Central European Time (Europe/Paris)
-- `github.com/matthalp/go-meridian/v2/timezones/cst` - China Standard Time (Asia/Shanghai)
-- `github.com/matthalp/go-meridian/v2/timezones/ct` - Central Time (America/Chicago)
-- `github.com/matthalp/go-meridian/v2/timezones/est` - **Deprecated**, use `et` (same zone; follows daylight saving time despite the name). Removed in v3.
-- `github.com/matthalp/go-meridian/v2/timezones/et` - Eastern Time (America/New_York)
-- `github.com/matthalp/go-meridian/v2/timezones/gmt` - UK time (Europe/London): GMT in winter, BST (UTC+1) in summer. For a fixed UTC+0 offset, use `utc`
-- `github.com/matthalp/go-meridian/v2/timezones/hkt` - Hong Kong Time (Asia/Hong_Kong)
-- `github.com/matthalp/go-meridian/v2/timezones/ist` - India Standard Time (Asia/Kolkata)
-- `github.com/matthalp/go-meridian/v2/timezones/jst` - Japan Standard Time (Asia/Tokyo)
-- `github.com/matthalp/go-meridian/v2/timezones/mt` - Mountain Time (America/Denver)
-- `github.com/matthalp/go-meridian/v2/timezones/pst` - **Deprecated**, use `pt` (same zone; follows daylight saving time despite the name). Removed in v3.
-- `github.com/matthalp/go-meridian/v2/timezones/pt` - Pacific Time (America/Los_Angeles)
-- `github.com/matthalp/go-meridian/v2/timezones/sgt` - Singapore Time (Asia/Singapore)
-- `github.com/matthalp/go-meridian/v2/timezones/utc` - Coordinated Universal Time
+- `github.com/matthalp/go-meridian/v3/timezones/aest` - Australian Eastern Time (Australia/Sydney)
+- `github.com/matthalp/go-meridian/v3/timezones/brt` - Brasília Time (America/Sao_Paulo)
+- `github.com/matthalp/go-meridian/v3/timezones/cet` - Central European Time (Europe/Paris)
+- `github.com/matthalp/go-meridian/v3/timezones/cst` - China Standard Time (Asia/Shanghai)
+- `github.com/matthalp/go-meridian/v3/timezones/ct` - Central Time (America/Chicago)
+- `github.com/matthalp/go-meridian/v3/timezones/est` - **Deprecated**, use `et` (same zone; follows daylight saving time despite the name). Removed in v3.
+- `github.com/matthalp/go-meridian/v3/timezones/et` - Eastern Time (America/New_York)
+- `github.com/matthalp/go-meridian/v3/timezones/gmt` - UK time (Europe/London): GMT in winter, BST (UTC+1) in summer. For a fixed UTC+0 offset, use `utc`
+- `github.com/matthalp/go-meridian/v3/timezones/hkt` - Hong Kong Time (Asia/Hong_Kong)
+- `github.com/matthalp/go-meridian/v3/timezones/ist` - India Standard Time (Asia/Kolkata)
+- `github.com/matthalp/go-meridian/v3/timezones/jst` - Japan Standard Time (Asia/Tokyo)
+- `github.com/matthalp/go-meridian/v3/timezones/mt` - Mountain Time (America/Denver)
+- `github.com/matthalp/go-meridian/v3/timezones/pst` - **Deprecated**, use `pt` (same zone; follows daylight saving time despite the name). Removed in v3.
+- `github.com/matthalp/go-meridian/v3/timezones/pt` - Pacific Time (America/Los_Angeles)
+- `github.com/matthalp/go-meridian/v3/timezones/sgt` - Singapore Time (Asia/Singapore)
+- `github.com/matthalp/go-meridian/v3/timezones/utc` - Coordinated Universal Time
 
 Packages are generated from `timezones.yaml`; see [Adding Custom Timezones](#adding-custom-timezones) below.
 
@@ -161,7 +161,7 @@ Timezone packages are generated from the `timezones.yaml` configuration file. To
 
 3. **Import and use**:
    ```go
-   import "github.com/matthalp/go-meridian/v2/timezones/kst"
+   import "github.com/matthalp/go-meridian/v3/timezones/kst"
 
    now := kst.Now()
    ```
@@ -243,7 +243,7 @@ Coverage reports are automatically uploaded to Codecov for tracking test coverag
 
 ## API Documentation
 
-For detailed API documentation, see [pkg.go.dev](https://pkg.go.dev/github.com/matthalp/go-meridian/v2).
+For detailed API documentation, see [pkg.go.dev](https://pkg.go.dev/github.com/matthalp/go-meridian/v3).
 
 ## Publishing a New Version
 
