@@ -9,14 +9,25 @@ on:
 
 jobs:
   test:
-    name: Test (Go ${{ matrix.go }})
+    # Jobs are named by role rather than Go version so the required status
+    # checks in branch protection don't change when the minimum moves.
+    name: Test (Go ${{ matrix.name }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # 1.20.x is the minimum declared in go.mod; testing it keeps that claim
-        # honest. oldstable and stable track the Go releases the Go team supports.
-        go: [ '1.20.x', 'oldstable', 'stable' ]
+        include:
+          # The go directive in go.mod; testing it keeps that claim honest.
+          # Keep in sync with go.mod. Code that needs a newer Go (such as the
+          # To method, Go 1.27) sits behind a //go:build go1.N constraint and
+          # is only compiled and tested by the newer entries below.
+          - name: minimum
+            go: '1.26.x'
+          # The Go releases the Go team currently supports.
+          - name: oldstable
+            go: oldstable
+          - name: stable
+            go: stable
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -33,11 +44,11 @@ jobs:
         run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
 
       - name: Generate coverage report
-        if: matrix.go == 'stable'
+        if: matrix.name == 'stable'
         run: go tool cover -html=coverage.out -o coverage.html
 
       - name: Upload coverage to Codecov
-        if: matrix.go == 'stable'
+        if: matrix.name == 'stable'
         uses: codecov/codecov-action@v7
         with:
           files: ./coverage.out
@@ -45,7 +56,7 @@ jobs:
           name: codecov-umbrella
 
       - name: Upload coverage artifact
-        if: matrix.go == 'stable'
+        if: matrix.name == 'stable'
         uses: actions/upload-artifact@v7
         with:
           name: coverage-report

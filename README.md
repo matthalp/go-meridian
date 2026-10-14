@@ -24,8 +24,12 @@ Meridian solves a fundamental problem: timezone information in `time.Time` is da
 Install the package in your Go project:
 
 ```bash
-go get github.com/matthalp/go-meridian/v2
+go get github.com/matthalp/go-meridian/v3
 ```
+
+Requires Go 1.26 or later. The `To` conversion method needs Go 1.27, because it
+is a generic method (a Go 1.27 language feature); everything else works on
+Go 1.26. Upgrading from v2? See the [changelog](CHANGELOG.md).
 
 Timezone packages load their location from the host's timezone database when
 first imported, and panic if it is missing. On hosts without one (for example
@@ -47,8 +51,8 @@ import (
     "fmt"
     "time"
     
-    "github.com/matthalp/go-meridian/v2/timezones/et"
-    "github.com/matthalp/go-meridian/v2/timezones/utc"
+    "github.com/matthalp/go-meridian/v3/timezones/et"
+    "github.com/matthalp/go-meridian/v3/timezones/utc"
 )
 
 func main() {
@@ -91,22 +95,20 @@ formatted := t.Format(time.Kitchen) // Definitely UTC! ✅
 
 All timezone packages live under `timezones/`:
 
-- `github.com/matthalp/go-meridian/v2/timezones/aest` - Australian Eastern Time (Australia/Sydney)
-- `github.com/matthalp/go-meridian/v2/timezones/brt` - Brasília Time (America/Sao_Paulo)
-- `github.com/matthalp/go-meridian/v2/timezones/cet` - Central European Time (Europe/Paris)
-- `github.com/matthalp/go-meridian/v2/timezones/cst` - China Standard Time (Asia/Shanghai)
-- `github.com/matthalp/go-meridian/v2/timezones/ct` - Central Time (America/Chicago)
-- `github.com/matthalp/go-meridian/v2/timezones/est` - **Deprecated**, use `et` (same zone; follows daylight saving time despite the name). Removed in v3.
-- `github.com/matthalp/go-meridian/v2/timezones/et` - Eastern Time (America/New_York)
-- `github.com/matthalp/go-meridian/v2/timezones/gmt` - UK time (Europe/London): GMT in winter, BST (UTC+1) in summer. For a fixed UTC+0 offset, use `utc`
-- `github.com/matthalp/go-meridian/v2/timezones/hkt` - Hong Kong Time (Asia/Hong_Kong)
-- `github.com/matthalp/go-meridian/v2/timezones/ist` - India Standard Time (Asia/Kolkata)
-- `github.com/matthalp/go-meridian/v2/timezones/jst` - Japan Standard Time (Asia/Tokyo)
-- `github.com/matthalp/go-meridian/v2/timezones/mt` - Mountain Time (America/Denver)
-- `github.com/matthalp/go-meridian/v2/timezones/pst` - **Deprecated**, use `pt` (same zone; follows daylight saving time despite the name). Removed in v3.
-- `github.com/matthalp/go-meridian/v2/timezones/pt` - Pacific Time (America/Los_Angeles)
-- `github.com/matthalp/go-meridian/v2/timezones/sgt` - Singapore Time (Asia/Singapore)
-- `github.com/matthalp/go-meridian/v2/timezones/utc` - Coordinated Universal Time
+- `github.com/matthalp/go-meridian/v3/timezones/aest` - Australian Eastern Time (Australia/Sydney)
+- `github.com/matthalp/go-meridian/v3/timezones/brt` - Brasília Time (America/Sao_Paulo)
+- `github.com/matthalp/go-meridian/v3/timezones/cet` - Central European Time (Europe/Paris)
+- `github.com/matthalp/go-meridian/v3/timezones/cst` - China Standard Time (Asia/Shanghai)
+- `github.com/matthalp/go-meridian/v3/timezones/ct` - Central Time (America/Chicago)
+- `github.com/matthalp/go-meridian/v3/timezones/et` - Eastern Time (America/New_York)
+- `github.com/matthalp/go-meridian/v3/timezones/gmt` - UK time (Europe/London): GMT in winter, BST (UTC+1) in summer. For a fixed UTC+0 offset, use `utc`
+- `github.com/matthalp/go-meridian/v3/timezones/hkt` - Hong Kong Time (Asia/Hong_Kong)
+- `github.com/matthalp/go-meridian/v3/timezones/ist` - India Standard Time (Asia/Kolkata)
+- `github.com/matthalp/go-meridian/v3/timezones/jst` - Japan Standard Time (Asia/Tokyo)
+- `github.com/matthalp/go-meridian/v3/timezones/mt` - Mountain Time (America/Denver)
+- `github.com/matthalp/go-meridian/v3/timezones/pt` - Pacific Time (America/Los_Angeles)
+- `github.com/matthalp/go-meridian/v3/timezones/sgt` - Singapore Time (Asia/Singapore)
+- `github.com/matthalp/go-meridian/v3/timezones/utc` - Coordinated Universal Time
 
 Packages are generated from `timezones.yaml`; see [Adding Custom Timezones](#adding-custom-timezones) below.
 
@@ -138,6 +140,10 @@ typedTime := utc.FromMoment(stdTime)  // Now type-safe!
 
 // All conversions preserve the moment in time
 fmt.Println(etTime.UTC().Equal(utcTime.UTC()))  // true
+
+// Go 1.27+: the To method is the fluent form of FromMoment, and chains
+ptTime = etTime.To[pt.Timezone]()
+utcTime = etTime.To[pt.Timezone]().To[utc.Timezone]()
 ```
 
 The `Moment` interface allows both `time.Time` and `meridian.Time[TZ]` to be used interchangeably for conversions, providing flexibility while maintaining type safety where it matters.
@@ -161,7 +167,7 @@ Timezone packages are generated from the `timezones.yaml` configuration file. To
 
 3. **Import and use**:
    ```go
-   import "github.com/matthalp/go-meridian/v2/timezones/kst"
+   import "github.com/matthalp/go-meridian/v3/timezones/kst"
 
    now := kst.Now()
    ```
@@ -243,18 +249,18 @@ Coverage reports are automatically uploaded to Codecov for tracking test coverag
 
 ## API Documentation
 
-For detailed API documentation, see [pkg.go.dev](https://pkg.go.dev/github.com/matthalp/go-meridian/v2).
+For detailed API documentation, see [pkg.go.dev](https://pkg.go.dev/github.com/matthalp/go-meridian/v3).
 
 ## Publishing a New Version
 
-1. Merge a release-prep PR that bumps `Version` in `meridian.go` and moves the
-   `## [Unreleased]` entries in `CHANGELOG.md` under `## [X.Y.Z] - YYYY-MM-DD`.
+1. Merge a release-prep PR that moves the `## [Unreleased]` entries in
+   `CHANGELOG.md` under `## [X.Y.Z] - YYYY-MM-DD`.
 2. Check locally (optional; the workflow runs the same check):
    `make release-check VERSION=vX.Y.Z`
 3. Run the **Release** workflow (Actions > Release > Run workflow) from `main`,
    or from `release-vN` for a backport to an older major version, with the
    version as input. It runs the tests, checks the version against `go.mod`,
-   `Version`, `CHANGELOG.md` and the API changes since the previous release
+   `CHANGELOG.md` and the API changes since the previous release
    (via `gorelease`), then creates the tag and the GitHub release from the
    changelog section.
 

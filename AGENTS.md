@@ -22,7 +22,13 @@ This is a **distributable library** intended for consumption by other Go project
 - Package name conveys timezone, type is always `Timezone`
 
 ### 3. Explicit Conversions
-- Timezone conversions must be explicit: `et.FromMoment(pacificTime)`
+- Timezone conversions must be explicit. Two equivalent forms exist:
+  - Package function (works everywhere, including from `time.Time`): `et.FromMoment(pacificTime)`
+  - Method (Go 1.27+, `Time` → `Time` only): `pacificTime.To[et.Timezone]()`
+- `To` is a generic method, a Go 1.27 language feature. It lives in `to_go127.go`
+  behind `//go:build go1.27`, as do its test and example, so the module still
+  builds on the go.mod minimum. Any future code needing a newer Go than go.mod
+  declares must be gated the same way.
 - Conversions use the `Moment` interface, supporting both `time.Time` and `meridian.Time[TZ]`
 - This makes timezone handling visible in code review
 - No silent timezone changes or data loss
@@ -153,8 +159,8 @@ import (
     // External dependencies (none currently)
     
     // Internal packages
-    "github.com/matthalp/go-meridian/v2"
-    "github.com/matthalp/go-meridian/v2/timezones/et"
+    "github.com/matthalp/go-meridian/v3"
+    "github.com/matthalp/go-meridian/v3/timezones/et"
 )
 ```
 
@@ -197,6 +203,9 @@ etTyped := et.FromMoment(stdTime)
 
 // All conversions preserve the moment in time
 fmt.Println(eastern.UTC().Equal(pacific.UTC()))  // true
+
+// Go 1.27+: method form
+pacific = eastern.To[pt.Timezone]()
 ```
 
 ### The Moment Interface
@@ -240,14 +249,14 @@ func GetBusinessDayEnd[TZ Timezone](t meridian.Time[TZ]) meridian.Time[TZ] {
 4. Is the API intuitive for library consumers?
 
 ### Publishing Checklist
-1. Merge a release-prep PR that bumps `Version` in `meridian.go` and moves the
-   `## [Unreleased]` entries in `CHANGELOG.md` under `## [X.Y.Z] - YYYY-MM-DD`.
+1. Merge a release-prep PR that moves the `## [Unreleased]` entries in
+   `CHANGELOG.md` under `## [X.Y.Z] - YYYY-MM-DD`.
 2. Check locally (optional; the workflow runs the same check):
    `make release-check VERSION=vX.Y.Z`
 3. Run the **Release** workflow (Actions > Release > Run workflow) from `main`,
    or from `release-vN` for a backport to an older major version, with the
    version as input. It runs the tests, checks the version against `go.mod`,
-   `Version`, `CHANGELOG.md` and the API changes since the previous release
+   `CHANGELOG.md` and the API changes since the previous release
    (via `gorelease`), then creates the tag and the GitHub release from the
    changelog section.
 
@@ -325,8 +334,10 @@ if err != nil {
 
 The GitHub Actions workflow runs on every pull request (any base branch) and
 on pushes to `main` and `release-vN` branches. It enforces:
-1. **Tests pass** with race detection on Go 1.20 (the go.mod minimum),
-   `oldstable`, and `stable`
+1. **Tests pass** with race detection on the go.mod minimum (Go 1.26),
+   `oldstable`, and `stable`. Jobs are named by role (`Test (Go minimum)`, …)
+   so required status checks don't change when the minimum moves. Develop with
+   Go 1.27+: older `gofmt`/`gopls` can't parse the generic `To` method
 2. **Linting passes** with golangci-lint (pinned; v2 config schema)
 3. **go.mod is tidy**: `go mod tidy` produces no changes
 4. **Generated code is in sync**: Timezone packages match `timezones.yaml`

@@ -37,12 +37,6 @@ timezones:
     description: Central Time
     observes: Central Standard Time (CST, UTC-6) and, in summer, Central Daylight Time (CDT, UTC-5)
 
-  - name: est
-    location: America/New_York
-    description: Eastern Standard Time
-    observes: Eastern Standard Time (EST, UTC-5) and, in summer, Eastern Daylight Time (EDT, UTC-4), despite the package name
-    deprecated: Use package et, which is the same timezone (America/New_York). The name est suggests a fixed UTC-5 offset, but this package follows daylight saving time. Package est will be removed in v3.
-
   - name: et
     location: America/New_York
     description: Eastern Time
@@ -77,12 +71,6 @@ timezones:
     location: America/Los_Angeles
     description: Pacific Time
     observes: Pacific Standard Time (PST, UTC-8) and, in summer, Pacific Daylight Time (PDT, UTC-7)
-
-  - name: pst
-    location: America/Los_Angeles
-    description: Pacific Standard Time
-    observes: Pacific Standard Time (PST, UTC-8) and, in summer, Pacific Daylight Time (PDT, UTC-7), despite the package name
-    deprecated: Use package pt, which is the same timezone (America/Los_Angeles). The name pst suggests a fixed UTC-8 offset, but this package follows daylight saving time. Package pst will be removed in v3.
 
   - name: sgt
     location: Asia/Singapore

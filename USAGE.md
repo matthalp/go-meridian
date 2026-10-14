@@ -7,8 +7,10 @@
 Install the meridian package and timezone subpackages:
 
 ```bash
-go get github.com/matthalp/go-meridian/v2
+go get github.com/matthalp/go-meridian/v3
 ```
+
+Requires Go 1.26 or later; the `To` method needs Go 1.27.
 
 ### Basic Usage - Timezone Packages
 
@@ -21,9 +23,9 @@ import (
     "fmt"
     "time"
     
-    "github.com/matthalp/go-meridian/v2/timezones/et"
-    "github.com/matthalp/go-meridian/v2/timezones/pt"
-    "github.com/matthalp/go-meridian/v2/timezones/utc"
+    "github.com/matthalp/go-meridian/v3/timezones/et"
+    "github.com/matthalp/go-meridian/v3/timezones/pt"
+    "github.com/matthalp/go-meridian/v3/timezones/utc"
 )
 
 func main() {
@@ -52,8 +54,8 @@ package events
 import (
     "database/sql"
 
-    "github.com/matthalp/go-meridian/v2/timezones/et"
-    "github.com/matthalp/go-meridian/v2/timezones/utc"
+    "github.com/matthalp/go-meridian/v3/timezones/et"
+    "github.com/matthalp/go-meridian/v3/timezones/utc"
 )
 
 // Function only accepts UTC times
@@ -98,9 +100,9 @@ import (
     "fmt"
     "time"
     
-    "github.com/matthalp/go-meridian/v2/timezones/et"
-    "github.com/matthalp/go-meridian/v2/timezones/pt"
-    "github.com/matthalp/go-meridian/v2/timezones/utc"
+    "github.com/matthalp/go-meridian/v3/timezones/et"
+    "github.com/matthalp/go-meridian/v3/timezones/pt"
+    "github.com/matthalp/go-meridian/v3/timezones/utc"
 )
 
 func main() {
@@ -121,6 +123,17 @@ func main() {
 }
 ```
 
+With Go 1.27 or later, `Time` also has a `To` method, the fluent form of the same
+conversion. It is a generic method, a Go 1.27 language feature:
+
+```go
+ptMeeting := meeting.To[pt.Timezone]()
+utcMeeting := meeting.To[pt.Timezone]().To[utc.Timezone]() // conversions chain
+```
+
+`To` only starts from a `meridian.Time`; to convert a plain `time.Time`, use
+`FromMoment` as shown below.
+
 ### Converting from time.Time
 
 The `Moment` interface allows seamless conversion from standard `time.Time`:
@@ -130,8 +143,8 @@ package main
 
 import (
     "time"
-    "github.com/matthalp/go-meridian/v2/timezones/utc"
-    "github.com/matthalp/go-meridian/v2/timezones/et"
+    "github.com/matthalp/go-meridian/v3/timezones/utc"
+    "github.com/matthalp/go-meridian/v3/timezones/et"
 )
 
 func processStandardTime(stdTime time.Time) {
@@ -159,9 +172,9 @@ import (
     "fmt"
     "time"
     
-    "github.com/matthalp/go-meridian/v2/timezones/et"
-    "github.com/matthalp/go-meridian/v2/timezones/pt"
-    "github.com/matthalp/go-meridian/v2/timezones/utc"
+    "github.com/matthalp/go-meridian/v3/timezones/et"
+    "github.com/matthalp/go-meridian/v3/timezones/pt"
+    "github.com/matthalp/go-meridian/v3/timezones/utc"
 )
 
 func main() {
@@ -215,6 +228,32 @@ fmt.Println(ptTime.UTC()) // 2024-01-15 20:00:00 +0000 UTC
 fmt.Println(utcTime.UTC()) // 2024-01-15 12:00:00 +0000 UTC
 ```
 
+### Database Columns
+
+`Time[TZ]` implements `driver.Valuer` and `sql.Scanner`. It writes a UTC `time.Time`
+and reads one back, so a scanned value is always UTC internally whatever zone the
+driver returned.
+
+A `Time[TZ]` has no NULL state. `Scan` returns `meridian.ErrScanNull` for a NULL
+column rather than reading it as the zero time, which matches `time.Time`. Declare a
+nullable column as `sql.Null[...]`:
+
+```go
+import (
+    "database/sql"
+    "github.com/matthalp/go-meridian/v3/timezones/utc"
+)
+
+type Account struct {
+    CreatedAt utc.Time           // NOT NULL
+    ClosedAt  sql.Null[utc.Time] // NULL until the account closes
+}
+```
+
+`sql.Null[utc.Time]` reads NULL as `Valid: false` and writes `Valid: false` back as
+NULL. A valid value goes through `utc.Time`'s own `Scan` and `Value`.
+A `*utc.Time` field works too, but `sql.Null` keeps the NULL case explicit.
+
 ### The Moment Interface
 
 Both `time.Time` and `meridian.Time[TZ]` implement the `Moment` interface:
@@ -251,7 +290,7 @@ import (
     "fmt"
     "time"
 
-    "github.com/matthalp/go-meridian/v2"
+    "github.com/matthalp/go-meridian/v3"
 )
 
 // Define a custom timezone. Load the location once, not on every call.
@@ -303,7 +342,7 @@ go-meridian/
 ### Key Concepts
 
 1. **Exported vs Unexported**
-   - Exported (public): Start with uppercase letter (e.g., `Greet`, `Version`)
+   - Exported (public): Start with uppercase letter (e.g., `Now`, `Date`)
    - Unexported (private): Start with lowercase letter (e.g., `helper`)
 
 2. **Package Documentation**

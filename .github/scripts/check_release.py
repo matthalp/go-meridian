@@ -6,15 +6,17 @@ Usage: check_release.py vX.Y.Z [--notes FILE] [--gorelease PATH]
 Run from the repository root. Checks that:
   - the version is well-formed and not already tagged
   - its major version matches the module path in go.mod (/vN suffix)
-  - the Version constant in meridian.go matches
+  - the Version constant in meridian.go matches, if there is one (v2 has
+    one; v3 removed it)
   - CHANGELOG.md has a "## [X.Y.Z] - YYYY-MM-DD" section (written to
     --notes, if given and every check passes, for use as release notes;
     keep that file outside the repository, since gorelease refuses to run
     on a working tree with untracked files)
   - the bump is right for the API changes since the previous release of the
-    same major version, according to gorelease. A change to the exported
-    Version constant's value is ignored: gorelease reports any constant value
-    change as incompatible, but changing it is the point of a release.
+    same major version, according to gorelease. On branches that still have
+    the exported Version constant (v2), a change to its value is ignored:
+    gorelease reports any constant value change as incompatible, but changing
+    it is the point of a release.
 
 Exits non-zero, with a message per problem, if any check fails.
 """

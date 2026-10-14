@@ -18,9 +18,9 @@ Meridian makes timezone information immutable by encoding it directly into the t
 Meridian's Time[TZ] type carries timezone information as a type parameter:
 
 	import (
-		"github.com/matthalp/go-meridian/v2/timezones/et"
-		"github.com/matthalp/go-meridian/v2/timezones/pt"
-		"github.com/matthalp/go-meridian/v2/timezones/utc"
+		"github.com/matthalp/go-meridian/v3/timezones/et"
+		"github.com/matthalp/go-meridian/v3/timezones/pt"
+		"github.com/matthalp/go-meridian/v3/timezones/utc"
 	)
 
 	func SaveDeadline(t utc.Time) {
@@ -45,11 +45,26 @@ and meridian.Time[pt.Timezone] are as different as string and int.
 Per-Timezone Packages: Each timezone has its own package (et, pt, utc, etc.)
 with convenience functions like et.Now() and pt.Date(...).
 
-Explicit Conversions: Converting between timezones requires explicit function calls:
+Explicit Conversions: Converting between timezones requires explicit, visible
+calls. Each timezone package's FromMoment converts any Moment, including a
+plain time.Time:
 
 	eastern := et.Now()
 	pacific := pt.FromMoment(eastern)  // Explicit conversion
 	utcTime := utc.FromMoment(eastern)  // Convert to UTC for storage
+
+With Go 1.27 or later, Time also has a To method, the fluent form of the same
+conversion:
+
+	pacific = eastern.To[pt.Timezone]()
+	utcTime = eastern.To[utc.Timezone]()
+
+# Go Versions
+
+The module supports the Go releases the Go team supports; go.mod declares the
+oldest. To is a generic method, a language feature added in Go 1.27, so it is
+only compiled with Go 1.27 or later. Everything else, including FromMoment,
+works on every supported release.
 
 The Moment Interface: Both time.Time and meridian.Time[TZ] implement Moment,
 enabling seamless interoperability:
@@ -129,7 +144,7 @@ Additional timezones can be generated using the timezones.yaml configuration.
 
 # Installation
 
-	go get github.com/matthalp/go-meridian/v2
+	go get github.com/matthalp/go-meridian/v3
 
 # Design Philosophy
 

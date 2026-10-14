@@ -5,12 +5,10 @@ import (
 	"database/sql/driver"
 	"encoding"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 )
-
-// Version is the current version of the meridian package.
-const Version = "2.1.0"
 
 // Timezone interface that all timezone types must implement.
 // Each timezone package defines its own Timezone type that satisfies this interface,
@@ -28,7 +26,7 @@ type Moment interface {
 
 // Now returns the current time in the specified timezone.
 // The timezone type parameter TZ is typically inferred from context or explicitly
-// specified. For most use cases, prefer timezone-specific helpers like est.Now()
+// specified. For most use cases, prefer timezone-specific helpers like et.Now()
 // or utc.Now() for better readability.
 func Now[TZ Timezone]() Time[TZ] {
 	return Time[TZ]{utcTime: time.Now().UTC()}
@@ -38,7 +36,7 @@ func Now[TZ Timezone]() Time[TZ] {
 // in the specified timezone. The date components are interpreted in the timezone's
 // location, then stored internally as UTC. The timezone type is preserved in the
 // return type, ensuring type-safe handling. For most use cases, prefer timezone-specific
-// helpers like est.Date() or utc.Date() for better readability.
+// helpers like et.Date() or utc.Date() for better readability.
 func Date[TZ Timezone](year int, month time.Month, day, hour, minute, sec, nsec int) Time[TZ] {
 	loc := getLocation[TZ]()
 	t := time.Date(year, month, day, hour, minute, sec, nsec, loc)
@@ -49,7 +47,7 @@ func Date[TZ Timezone](year int, month time.Month, day, hour, minute, sec, nsec 
 // This is the primary way to convert between timezones explicitly. The conversion
 // preserves the moment in time (UTC equality) but changes the timezone type, making
 // the conversion visible in code review. For most use cases, prefer timezone-specific
-// helpers like est.FromMoment() or pst.FromMoment() for better readability.
+// helpers like et.FromMoment() or pt.FromMoment() for better readability.
 func FromMoment[TZ Timezone](m Moment) Time[TZ] {
 	return Time[TZ]{utcTime: m.UTC()}
 }
@@ -369,8 +367,13 @@ func (t Time[TZ]) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
-// The time is parsed and stored as UTC internally.
+// The time is parsed and stored as UTC internally. Following the encoding/json
+// convention (and time.Time), the JSON value null is a no-op: t is left
+// unchanged. Use a *Time[TZ] field to tell a null apart from a time.
 func (t *Time[TZ]) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return nil
+	}
 	var stdTime time.Time
 	if err := stdTime.UnmarshalJSON(data); err != nil {
 		return err
@@ -452,12 +455,20 @@ func (t Time[TZ]) Value() (driver.Value, error) {
 	return t.utcTime, nil
 }
 
+// ErrScanNull is returned by Scan when the column value is SQL NULL.
+//
+// A Time[TZ] has no NULL state, so a nullable column scans into
+// sql.Null[Time[TZ]] (or a *Time[TZ]) instead. Reading NULL as the zero time
+// would lose the distinction, and Value would then write the zero time back
+// where NULL was. This matches time.Time, which also refuses to scan NULL.
+var ErrScanNull = errors.New("meridian: cannot scan NULL into Time; use sql.Null[Time[TZ]] for a nullable column")
+
 // Scan implements the sql.Scanner interface for database/sql.
 // It accepts time.Time values and stores them as UTC internally.
+// A NULL value returns ErrScanNull and leaves t unchanged.
 func (t *Time[TZ]) Scan(value interface{}) error {
 	if value == nil {
-		t.utcTime = time.Time{}
-		return nil
+		return ErrScanNull
 	}
 
 	switch v := value.(type) {

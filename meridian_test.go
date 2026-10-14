@@ -2,9 +2,11 @@ package meridian
 
 import (
 	"bytes"
+	"database/sql"
 	"database/sql/driver"
 	"encoding/gob"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -38,12 +40,6 @@ type CustomOffset struct {
 
 func (c CustomOffset) Location() *time.Location {
 	return time.FixedZone("Custom", c.offset*3600)
-}
-
-func TestVersion(t *testing.T) {
-	if Version == "" {
-		t.Error("Version should not be empty")
-	}
 }
 
 func TestNow(t *testing.T) {
@@ -2153,6 +2149,51 @@ func TestUnmarshalJSON(t *testing.T) {
 	}
 }
 
+// TestUnmarshalJSONNull checks that JSON null leaves the value unchanged, as
+// time.Time does, rather than resetting it to the zero time.
+func TestUnmarshalJSONNull(t *testing.T) {
+	t.Parallel()
+
+	original := Date[EST](2024, time.June, 15, 14, 30, 45, 0)
+
+	t.Run("method call", func(t *testing.T) {
+		got := original
+		if err := got.UnmarshalJSON([]byte("null")); err != nil {
+			t.Fatalf("UnmarshalJSON(null) error = %v", err)
+		}
+		if got != original {
+			t.Errorf("UnmarshalJSON(null) changed value to %v, want %v", got, original)
+		}
+	})
+
+	t.Run("struct field matches time.Time", func(t *testing.T) {
+		type event struct {
+			At    Time[EST]
+			StdAt time.Time
+		}
+		e := event{At: original, StdAt: original.UTC()}
+		if err := json.Unmarshal([]byte(`{"At":null,"StdAt":null}`), &e); err != nil {
+			t.Fatalf("json.Unmarshal error = %v", err)
+		}
+		if e.At != original {
+			t.Errorf("At = %v, want unchanged %v", e.At, original)
+		}
+		if !e.StdAt.Equal(original.UTC()) {
+			t.Errorf("time.Time field changed to %v; test assumption broken", e.StdAt)
+		}
+	})
+
+	t.Run("pointer field distinguishes null", func(t *testing.T) {
+		var e struct{ At *Time[EST] }
+		if err := json.Unmarshal([]byte(`{"At":null}`), &e); err != nil {
+			t.Fatalf("json.Unmarshal error = %v", err)
+		}
+		if e.At != nil {
+			t.Errorf("At = %v, want nil", e.At)
+		}
+	})
+}
+
 func TestJSONRoundTrip(t *testing.T) {
 	original := Date[UTC](2024, time.June, 15, 14, 30, 45, 123456789)
 
@@ -2742,17 +2783,71 @@ func TestScanWithDifferentLocation(t *testing.T) {
 }
 
 func TestScanNil(t *testing.T) {
-	// Set to non-zero first
-	testTime := Date[UTC](2024, time.June, 15, 14, 30, 45, 0)
+	original := Date[UTC](2024, time.June, 15, 14, 30, 45, 0)
+	testTime := original
 
 	err := testTime.Scan(nil)
-	if err != nil {
-		t.Fatalf("Scan(nil) error = %v", err)
+	if !errors.Is(err, ErrScanNull) {
+		t.Fatalf("Scan(nil) error = %v, want ErrScanNull", err)
 	}
 
-	if !testTime.IsZero() {
-		t.Errorf("Scan(nil) should set to zero time, got %v", testTime)
+	if !testTime.Equal(original) {
+		t.Errorf("Scan(nil) changed the value to %v, want it left at %v", testTime, original)
 	}
+}
+
+func TestNullableColumnRoundTrip(t *testing.T) {
+	t.Run("NULL scans as invalid", func(t *testing.T) {
+		var n sql.Null[Time[UTC]]
+		if err := n.Scan(nil); err != nil {
+			t.Fatalf("Scan(nil) error = %v", err)
+		}
+		if n.Valid {
+			t.Errorf("Scan(nil) Valid = true, want false")
+		}
+	})
+
+	t.Run("a time scans as valid, stored as UTC", func(t *testing.T) {
+		estLoc, _ := time.LoadLocation("America/New_York")
+		source := time.Date(2024, time.January, 15, 7, 0, 0, 0, estLoc)
+
+		var n sql.Null[Time[UTC]]
+		if err := n.Scan(source); err != nil {
+			t.Fatalf("Scan() error = %v", err)
+		}
+		if !n.Valid {
+			t.Fatalf("Scan() Valid = false, want true")
+		}
+		if !n.V.UTC().Equal(source) {
+			t.Errorf("Scan() stored %v, want %v", n.V.UTC(), source.UTC())
+		}
+	})
+
+	t.Run("an invalid value writes NULL", func(t *testing.T) {
+		value, err := sql.Null[Time[UTC]]{}.Value()
+		if err != nil {
+			t.Fatalf("Value() error = %v", err)
+		}
+		if value != nil {
+			t.Errorf("Value() = %v, want nil", value)
+		}
+	})
+
+	t.Run("a valid value writes a UTC time.Time", func(t *testing.T) {
+		moment := Date[EST](2024, time.January, 15, 7, 0, 0, 0)
+
+		value, err := sql.Null[Time[EST]]{V: moment, Valid: true}.Value()
+		if err != nil {
+			t.Fatalf("Value() error = %v", err)
+		}
+		stdTime, ok := value.(time.Time)
+		if !ok {
+			t.Fatalf("Value() = %T, want time.Time", value)
+		}
+		if stdTime.Location() != time.UTC || !stdTime.Equal(moment.UTC()) {
+			t.Errorf("Value() = %v, want %v in UTC", stdTime, moment.UTC())
+		}
+	})
 }
 
 func TestScanInvalidType(t *testing.T) {
