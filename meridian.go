@@ -370,8 +370,13 @@ func (t Time[TZ]) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface.
-// The time is parsed and stored as UTC internally.
+// The time is parsed and stored as UTC internally. Following the encoding/json
+// convention (and time.Time), the JSON value null is a no-op: t is left
+// unchanged. Use a *Time[TZ] field to tell a null apart from a time.
 func (t *Time[TZ]) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return nil
+	}
 	var stdTime time.Time
 	if err := stdTime.UnmarshalJSON(data); err != nil {
 		return err

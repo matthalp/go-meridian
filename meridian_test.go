@@ -2155,6 +2155,51 @@ func TestUnmarshalJSON(t *testing.T) {
 	}
 }
 
+// TestUnmarshalJSONNull checks that JSON null leaves the value unchanged, as
+// time.Time does, rather than resetting it to the zero time.
+func TestUnmarshalJSONNull(t *testing.T) {
+	t.Parallel()
+
+	original := Date[EST](2024, time.June, 15, 14, 30, 45, 0)
+
+	t.Run("method call", func(t *testing.T) {
+		got := original
+		if err := got.UnmarshalJSON([]byte("null")); err != nil {
+			t.Fatalf("UnmarshalJSON(null) error = %v", err)
+		}
+		if got != original {
+			t.Errorf("UnmarshalJSON(null) changed value to %v, want %v", got, original)
+		}
+	})
+
+	t.Run("struct field matches time.Time", func(t *testing.T) {
+		type event struct {
+			At    Time[EST]
+			StdAt time.Time
+		}
+		e := event{At: original, StdAt: original.UTC()}
+		if err := json.Unmarshal([]byte(`{"At":null,"StdAt":null}`), &e); err != nil {
+			t.Fatalf("json.Unmarshal error = %v", err)
+		}
+		if e.At != original {
+			t.Errorf("At = %v, want unchanged %v", e.At, original)
+		}
+		if !e.StdAt.Equal(original.UTC()) {
+			t.Errorf("time.Time field changed to %v; test assumption broken", e.StdAt)
+		}
+	})
+
+	t.Run("pointer field distinguishes null", func(t *testing.T) {
+		var e struct{ At *Time[EST] }
+		if err := json.Unmarshal([]byte(`{"At":null}`), &e); err != nil {
+			t.Fatalf("json.Unmarshal error = %v", err)
+		}
+		if e.At != nil {
+			t.Errorf("At = %v, want nil", e.At)
+		}
+	})
+}
+
 func TestJSONRoundTrip(t *testing.T) {
 	original := Date[UTC](2024, time.June, 15, 14, 30, 45, 123456789)
 
